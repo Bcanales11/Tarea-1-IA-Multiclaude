@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Fotos y dataset de visión (pesan mucho; se juntan localmente, ver vision/README.md)
+vision/dataset/images_sin_etiquetar/*
+vision/dataset/etiquetadas/
+vision/dataset/images/train/*
+vision/dataset/images/val/*
+vision/dataset/labels/train/*
+vision/dataset/labels/val/*
+
+# Entrenamientos de YOLO (pesos + logs, se regeneran con entrenar_yolo.py)
+vision/modelos/kiosco_saludable/

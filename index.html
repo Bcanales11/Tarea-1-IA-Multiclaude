@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat con API Local</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f3f4f6;
+            --chat-bg: #ffffff;
+            --text-color: #1f2937;
+            --bot-bubble: #f3f4f6;
+            --user-bubble: #2563eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--chat-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap; /* Mantiene los saltos de línea de la API */
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: var(--user-bubble);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background-color: var(--bot-bubble);
+            color: var(--text-color);
+            border-bottom-left-radius: 2px;
+        }
+
+        .loading-container {
+            width: 100%;
+            height: 4px;
+            background-color: #e5e7eb;
+            display: none;
+        }
+
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: var(--chat-bg);
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        button:disabled {
+            background-color: #93c5fd;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            Qwen 3.5 Chat
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">¡Hola! Conectado a la API. Hazme una pregunta y me tomaré mi tiempo para procesarla.</div>
+        </div>
+
+        <div class="loading-container" id="loadingContainer">
+            <div class="loading-bar" id="loadingBar"></div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Ej: escribe un ciclo for del 1 al 10 mostrando en pantalla el resultado..." autocomplete="off">
+            <button id="sendBtn" onclick="sendMessage()">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        const userInput = document.getElementById('userInput');
+        const chatMessages = document.getElementById('chatMessages');
+        const sendBtn = document.getElementById('sendBtn');
+        const loadingContainer = document.getElementById('loadingContainer');
+        const loadingBar = document.getElementById('loadingBar');
+
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // Mostrar el mensaje del usuario
+            addMessage(text, 'user');
+            userInput.value = '';
+            
+            // Bloquear inputs y mostrar barra de carga
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+            loadingContainer.style.display = 'block';
+            
+            let progress = 0;
+            loadingBar.style.width = '0%';
+            
+            const loadingInterval = setInterval(() => {
+                progress += Math.random() * 5;
+                if (progress > 90) progress = 90;
+                loadingBar.style.width = `${progress}%`;
+            }, 400);
+
+            try {
+                // Conexión real a tu API
+                const response = await fetch('http://127.0.0.1:1234/api/v1/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*',
+                        'Authorization': 'Bearer sk-lm-JrgfMLwD:ik8kKEoBnMzOCsmeKTM0'
+                    },
+                    body: JSON.stringify({
+                        model: "qwen/qwen3-vl-4b",
+                        input: text, // Insertamos el texto del usuario aquí
+                        context_length: 8000,
+                        temperature: 0
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error del servidor: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // La API devuelve texto directo en data.output[0].content
+                let botReply = data?.output?.[0]?.content;
+
+                // Compatibilidad con otras posibles estructuras
+                if (!botReply && data?.response) {
+                    botReply = data.response;
+                }
+                if (!botReply && data?.reply) {
+                    botReply = data.reply;
+                }
+                if (!botReply && data?.choices?.length) {
+                    botReply = data.choices[0]?.message?.content;
+                }
+
+                if (typeof botReply !== 'string') {
+                    botReply = JSON.stringify(botReply ?? data, null, 2);
+                }
+
+                // Completar la barra
+                clearInterval(loadingInterval);
+                loadingBar.style.width = '100%';
+
+                setTimeout(() => {
+                    loadingContainer.style.display = 'none';
+                    addMessage(botReply, 'bot');
+                    
+                    userInput.disabled = false;
+                    sendBtn.disabled = false;
+                    userInput.focus();
+                }, 300);
+
+            } catch (error) {
+                console.error(error);
+                clearInterval(loadingInterval);
+                loadingContainer.style.display = 'none';
+                addMessage('Hubo un error de conexión con la API (revisa la consola para más detalles).', 'bot');
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+</body>
+</html>

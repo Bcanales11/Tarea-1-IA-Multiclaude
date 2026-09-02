@@ -1,0 +1,776 @@
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<title>Kiosco Escolar Saludable</title>
+
+<style>
+  :root {
+    --bg: #F2F5F4;
+    --surface: #FFFFFF;
+    --surface-sunken: #E9EFEE;
+    --ink: #142524;
+    --ink-muted: #4B615F;
+    --ink-faint: #7C8F8C;
+    --accent: #1B5E5A;
+    --accent-strong: #0F3E3B;
+    --accent-soft: #DCEAE7;
+    --line: #D3DCDA;
+    --line-strong: #AEBDBA;
+    --amber: #93662A;
+    --amber-soft: #F1E4CE;
+    --good: #256B4C;
+    --good-soft: #DDEDE3;
+    --bad: #A83B27;
+    --bad-soft: #F6DFD8;
+    --shadow: 0 1px 2px rgba(15, 40, 38, 0.06), 0 6px 20px -8px rgba(15, 40, 38, 0.12);
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D1615;
+      --surface: #131F1E;
+      --surface-sunken: #0F1A19;
+      --ink: #E8EFED;
+      --ink-muted: #9FB3B0;
+      --ink-faint: #6F8482;
+      --accent: #54C2B6;
+      --accent-strong: #7FDACF;
+      --accent-soft: #17302D;
+      --line: #24413E;
+      --line-strong: #335552;
+      --amber: #D9A75C;
+      --amber-soft: #2B2417;
+      --good: #55B989;
+      --good-soft: #16302A;
+      --bad: #E17F63;
+      --bad-soft: #331E19;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 30px -10px rgba(0, 0, 0, 0.5);
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0D1615;
+    --surface: #131F1E;
+    --surface-sunken: #0F1A19;
+    --ink: #E8EFED;
+    --ink-muted: #9FB3B0;
+    --ink-faint: #6F8482;
+    --accent: #54C2B6;
+    --accent-strong: #7FDACF;
+    --accent-soft: #17302D;
+    --line: #24413E;
+    --line-strong: #335552;
+    --amber: #D9A75C;
+    --amber-soft: #2B2417;
+    --good: #55B989;
+    --good-soft: #16302A;
+    --bad: #E17F63;
+    --bad-soft: #331E19;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 30px -10px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  ::selection { background: var(--accent-soft); color: var(--accent-strong); }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Public Sans", -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: "Zilla Slab", Georgia, serif;
+    color: var(--ink);
+    font-weight: 600;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .mono {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  a { color: var(--accent-strong); }
+  :root[data-theme="dark"] a, @media (prefers-color-scheme: dark) { }
+  a:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- shell ---------- */
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 32px 120px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 56px;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .railnav { display: none; }
+  }
+
+  /* ---------- cover ---------- */
+  .cover {
+    padding: 96px 0 56px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 56px;
+  }
+
+  .kicker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    margin-bottom: 28px;
+  }
+
+  .kicker .seal { flex: none; }
+
+  .cover h1 {
+    font-size: clamp(2.3rem, 4.4vw, 3.6rem);
+    line-height: 1.06;
+    max-width: 16ch;
+  }
+
+  .cover .dek {
+    margin-top: 20px;
+    max-width: 56ch;
+    font-size: 1.15rem;
+    color: var(--ink-muted);
+  }
+
+  .cover-meta {
+    margin-top: 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px 40px;
+  }
+
+  .cover-meta div { display: flex; flex-direction: column; gap: 4px; }
+  .cover-meta .label {
+    font-size: 11.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .cover-meta .val { font-size: 0.95rem; color: var(--ink); }
+
+  /* ---------- rail nav ---------- */
+  .railnav {
+    position: sticky;
+    top: 40px;
+  }
+  .railnav ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid var(--line);
+  }
+  .railnav li { position: relative; }
+  .railnav a {
+    display: block;
+    padding: 9px 0 9px 18px;
+    font-size: 13.5px;
+    color: var(--ink-muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    margin-left: -1px;
+  }
+  .railnav a:hover { color: var(--accent-strong); }
+  .railnav .n {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--ink-faint);
+    margin-right: 8px;
+    font-size: 12px;
+  }
+
+  /* ---------- sections ---------- */
+  section { padding-top: 84px; scroll-margin-top: 28px; }
+  section:first-of-type { padding-top: 0; }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .section-num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  .section-head h2 { font-size: 1.7rem; }
+
+  .prose { max-width: 68ch; }
+  .prose p { margin: 0 0 16px; color: var(--ink); }
+  .prose p.lead { font-size: 1.05rem; color: var(--ink-muted); }
+  .prose ul, .prose ol { max-width: 64ch; padding-left: 22px; margin: 0 0 16px; }
+  .prose li { margin-bottom: 8px; }
+  .prose strong { color: var(--ink); font-weight: 600; }
+
+  code {
+    font-family: "IBM Plex Mono", monospace;
+    background: var(--surface-sunken);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.88em;
+  }
+
+  /* ---------- panels / cards ---------- */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    padding: 28px 30px;
+    margin: 28px 0;
+  }
+  .panel-wide { max-width: 100%; }
+
+  .spec-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    margin: 32px 0;
+  }
+  .spec-strip > div {
+    padding: 20px 22px;
+    border-left: 1px solid var(--line);
+  }
+  .spec-strip > div:first-child { border-left: none; }
+  .spec-strip .k {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+  .spec-strip .v {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 1.3rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .spec-strip .v small { font-size: 0.55em; color: var(--ink-muted); font-family: "Public Sans", sans-serif; }
+
+  figure { margin: 32px 0; }
+  figure svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  figcaption {
+    margin-top: 14px;
+    font-size: 13.5px;
+    color: var(--ink-muted);
+    max-width: 62ch;
+  }
+  .diagram-frame {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    padding: 26px 24px 18px;
+  }
+
+  /* ---------- tables ---------- */
+  .table-wrap { overflow-x: auto; margin: 24px 0; border: 1px solid var(--line); border-radius: 6px; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; background: var(--surface); }
+  th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--line); font-size: 14.5px; white-space: nowrap; }
+  td.wrap { white-space: normal; }
+  thead th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: var(--surface-sunken);
+    font-weight: 500;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num, th.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; text-align: right; }
+  tbody tr:hover { background: var(--surface-sunken); }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: "IBM Plex Mono", monospace;
+  }
+  .pill.good { background: var(--good-soft); color: var(--good); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
+  .pill.accent { background: var(--accent-soft); color: var(--accent-strong); }
+  .pill.amber { background: var(--amber-soft); color: var(--amber); }
+
+  /* ---------- allow/deny legend chips used inside diagrams' captions ---------- */
+  .flow-legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 16px; font-size: 13px; color: var(--ink-muted); }
+  .flow-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+
+  /* ---------- callouts ---------- */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 16px 20px;
+    border-radius: 0 6px 6px 0;
+    margin: 24px 0;
+    max-width: 62ch;
+  }
+  .callout p { margin: 0; color: var(--ink); font-size: 14.5px; }
+  .callout .lbl { font-family: "IBM Plex Mono", monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-strong); margin-bottom: 6px; display: block; }
+
+  hr.rule { border: none; border-top: 1px solid var(--line); margin: 64px 0 0; }
+
+  footer {
+    margin-top: 90px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--ink-faint);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { scroll-behavior: auto !important; }
+  }
+  html { scroll-behavior: smooth; }
+</style>
+
+<div class="shell">
+
+  <div class="cover">
+    <div class="kicker">
+      <svg class="seal" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        <polygon points="5.2,1 10.8,1 15,5.2 15,10.8 10.8,15 5.2,15 1,10.8 1,5.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      </svg>
+      TICS867 · IA MultiCloud — Proyecto 1, IA Local
+    </div>
+    <h1>Kiosco Escolar Saludable</h1>
+    <p class="dek">Informe de arquitectura, GPU mínima, red/NSG y escalabilidad del prototipo de verificación de cumplimiento de la Ley de Etiquetado (Ley 20.606) en kioscos escolares.</p>
+    <div class="cover-meta">
+      <div><span class="label">Componentes</span><span class="val">Visión (YOLOv8 + OCR) · LLM local · RAG normativo</span></div>
+      <div><span class="label">Cómputo</span><span class="val">100% on-device, sin llamadas a API cloud</span></div>
+      <div><span class="label">Fecha</span><span class="val">Septiembre 2026</span></div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <nav class="railnav" aria-label="Secciones del informe">
+      <ol>
+        <li><a href="#resumen"><span class="n">01</span>Resumen</a></li>
+        <li><a href="#arquitectura"><span class="n">02</span>Arquitectura</a></li>
+        <li><a href="#gpu"><span class="n">03</span>GPU mínima</a></li>
+        <li><a href="#red"><span class="n">04</span>Red y NSG</a></li>
+        <li><a href="#escalabilidad"><span class="n">05</span>Escalabilidad</a></li>
+        <li><a href="#local-vs-cloud"><span class="n">06</span>Local vs. Cloud</a></li>
+        <li><a href="#evidencia"><span class="n">07</span>Evidencia</a></li>
+        <li><a href="#estado"><span class="n">08</span>Estado</a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+      <!-- 01 RESUMEN -->
+      <section id="resumen">
+        <div class="section-head"><span class="section-num">01</span><h2>Resumen del sistema</h2></div>
+        <div class="prose">
+          <p class="lead">El kiosquero pone el producto frente a la cámara. En menos de un segundo, el sistema dice si puede venderlo dentro del colegio. Si tiene dudas, le pregunta al asistente en lenguaje natural y este responde citando la normativa real.</p>
+          <p>El sistema resuelve dos tareas distintas sobre el mismo dispositivo: una <strong>determinística</strong> (¿cuántos sellos "ALTO EN" tiene el producto?, evaluada por visión computacional + una regla fija del reglamento) y una <strong>conversacional</strong> (¿por qué?, ¿qué pasa en tal caso?, respondida por un LLM local con RAG sobre la Ley 20.606, el Decreto 13/2015 y la Guía MINSAL de Kioscos Saludables). Ambas corren en el mismo equipo, sin salir del colegio.</p>
+        </div>
+
+        <div class="spec-strip">
+          <div><div class="k">GPU validada</div><div class="v">Apple M3 <small>8 GB unificada</small></div></div>
+          <div><div class="k">Modelos LLM en disco</div><div class="v">1.8–2.9 GB <small>c/u, cuantizados</small></div></div>
+          <div><div class="k">Corpus normativo</div><div class="v">75 <small>fragmentos indexados</small></div></div>
+          <div><div class="k">Latencia chat (RAG)</div><div class="v">3.6–11.5 <small>s / respuesta</small></div></div>
+        </div>
+      </section>
+
+      <!-- 02 ARQUITECTURA -->
+      <section id="arquitectura">
+        <div class="section-head"><span class="section-num">02</span><h2>Arquitectura general</h2></div>
+        <div class="prose">
+          <p>El dispositivo corre <strong>dos caminos de datos independientes</strong> que comparten un mismo frontend. El camino de visión es rápido y no depende del LLM: solo usa el modelo YOLO propio, EasyOCR y una regla de negocio fija en Python, por eso el veredicto (APTO / NO APTO) aparece casi instantáneo. El camino conversacional sí pasa por el LLM y el RAG, por eso el chat tarda segundos, no milisegundos. Ningún video ni fotografía sale nunca del dispositivo.</p>
+        </div>
+
+        <figure>
+          <div class="diagram-frame">
+            <svg viewBox="0 0 980 560" role="img" aria-label="Diagrama de arquitectura: la cámara entra al dispositivo edge local, donde dos caminos de datos independientes (visión determinística y chat con RAG) alimentan un frontend compartido; solo actualizaciones de modelo/corpus salen hacia una gestión central opcional." xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+                </marker>
+                <marker id="arrAccent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#1B5E5A"/>
+                </marker>
+              </defs>
+
+              <!-- edge device boundary -->
+              <rect x="40" y="70" width="700" height="420" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 4" opacity="0.55"/>
+              <text x="60" y="58" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="0.06em" fill="currentColor" opacity="0.7">DISPOSITIVO EDGE — LOCAL, POR KIOSCO (SIN INTERNET REQUERIDO)</text>
+
+              <!-- camera -->
+              <rect x="70" y="150" width="120" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="130" y="174" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" font-weight="600" fill="currentColor">Cámara</text>
+              <text x="130" y="190" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.65">frame de video</text>
+
+              <!-- YOLO -->
+              <rect x="250" y="105" width="150" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="325" y="129" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" font-weight="600" fill="currentColor">YOLOv8n propio</text>
+              <text x="325" y="145" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.65">producto + sello</text>
+
+              <!-- OCR -->
+              <rect x="250" y="195" width="150" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="325" y="219" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" font-weight="600" fill="currentColor">EasyOCR</text>
+              <text x="325" y="235" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.65">lee texto del sello</text>
+
+              <!-- regla negocio -->
+              <rect x="460" y="150" width="160" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="540" y="174" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" font-weight="600" fill="currentColor">Regla art. 110 bis</text>
+              <text x="540" y="190" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.65">1 sello → NO APTO</text>
+
+              <!-- Chat path -->
+              <rect x="70" y="330" width="140" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="140" y="354" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" font-weight="600" fill="currentColor">Pregunta libre</text>
+              <text x="140" y="370" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.65">del kiosquero</text>
+
+              <rect x="260" y="330" width="150" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="335" y="354" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" font-weight="600" fill="currentColor">Índice RAG</text>
+              <text x="335" y="370" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.65">75 fragmentos, top-4</text>
+
+              <rect x="460" y="330" width="160" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="540" y="354" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" font-weight="600" fill="currentColor">LLM (LM Studio)</text>
+              <text x="540" y="370" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.65">respuesta citando fuente</text>
+
+              <!-- DB -->
+              <rect x="490" y="420" width="130" height="52" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="555" y="443" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" font-weight="600" fill="currentColor">SQLite</text>
+              <text x="555" y="459" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.65">historial local</text>
+
+              <!-- Frontend -->
+              <rect x="740" y="230" width="180" height="110" rx="6" fill="#1B5E5A" opacity="0.08" stroke="#1B5E5A" stroke-width="1.6"/>
+              <text x="830" y="270" text-anchor="middle" font-family="Zilla Slab, serif" font-size="15" font-weight="600" fill="#1B5E5A">Frontend</text>
+              <text x="830" y="290" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.7">navegador local</text>
+              <text x="830" y="306" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.7">cajas + APTO/chat</text>
+              <text x="830" y="322" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10.5" fill="currentColor" opacity="0.7">para el kiosquero</text>
+
+              <!-- Gestion central -->
+              <rect x="740" y="60" width="180" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.75"/>
+              <text x="830" y="86" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">Gestión central</text>
+              <text x="830" y="102" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">(opcional, multi-colegio)</text>
+              <text x="830" y="117" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">solo push de modelo/corpus</text>
+
+              <!-- arrows: vision path -->
+              <line x1="190" y1="170" x2="245" y2="133" stroke="currentColor" stroke-width="1.3" marker-end="url(#arr)"/>
+              <line x1="190" y1="182" x2="245" y2="222" stroke="currentColor" stroke-width="1.3" marker-end="url(#arr)"/>
+              <line x1="400" y1="133" x2="455" y2="167" stroke="currentColor" stroke-width="1.3" marker-end="url(#arr)"/>
+              <line x1="400" y1="222" x2="455" y2="185" stroke="currentColor" stroke-width="1.3" marker-end="url(#arr)"/>
+
+              <!-- arrows: chat path -->
+              <line x1="210" y1="358" x2="255" y2="358" stroke="currentColor" stroke-width="1.3" marker-end="url(#arr)"/>
+              <line x1="410" y1="358" x2="455" y2="358" stroke="currentColor" stroke-width="1.3" marker-end="url(#arr)"/>
+
+              <!-- both paths -> DB -->
+              <line x1="555" y1="206" x2="555" y2="416" stroke="currentColor" stroke-width="1.1" stroke-dasharray="4 3" opacity="0.6" marker-end="url(#arr)"/>
+              <text x="565" y="300" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="currentColor" opacity="0.6">registra veredicto</text>
+
+              <!-- both paths -> frontend -->
+              <path d="M620,178 C 690,178 700,230 740,262" fill="none" stroke="#1B5E5A" stroke-width="1.6" marker-end="url(#arrAccent)"/>
+              <text x="628" y="205" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#1B5E5A">veredicto ~&lt;1s</text>
+
+              <path d="M620,358 C 690,358 700,320 740,300" fill="none" stroke="#1B5E5A" stroke-width="1.6" marker-end="url(#arrAccent)"/>
+              <text x="628" y="345" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#1B5E5A">respuesta 3.6–11.5s</text>
+
+              <!-- to central: dashed, crossing boundary -->
+              <path d="M830,230 C 830,180 830,150 830,132" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.75" marker-end="url(#arr)"/>
+              <text x="843" y="185" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="currentColor" opacity="0.75">check semanal</text>
+              <text x="843" y="197" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="currentColor" opacity="0.75">HTTPS 443 saliente</text>
+
+            </svg>
+          </div>
+          <figcaption>El camino de visión (arriba) es determinístico y no usa LLM: por eso el veredicto llega en menos de un segundo. El camino de chat (abajo) sí pasa por el RAG y el LLM local vía LM Studio, con la latencia medida en la sección 07. Ambos escriben en el mismo SQLite y ambos alimentan el mismo frontend. Ningún video sale del dispositivo — a gestión central solo llegan, opcionalmente, checks de actualización de modelo/corpus.</figcaption>
+        </figure>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Capa</th><th class="wrap">Qué hace</th><th class="wrap">Con qué</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Frontend</strong></td><td class="wrap">Vista de cámara con cajas dibujadas, badge APTO/NO APTO, panel de chat</td><td class="wrap">Página web local (extiende <code>index.html</code>), sin hosting externo</td></tr>
+              <tr><td><strong>Backend</strong></td><td class="wrap">Orquesta cámara → visión → regla de negocio, y pregunta → RAG → LLM</td><td class="wrap">Servicio local (FastAPI/Flask) sobre <code>vision/</code> y <code>rag/</code>, habla con LM Studio por <code>localhost:1234</code></td></tr>
+              <tr><td><strong>Base de datos</strong></td><td class="wrap">Historial de escaneos (fecha, nutrientes, veredicto) para reportes del colegio</td><td class="wrap">SQLite embebido, sin fotos ni datos personales por defecto</td></tr>
+              <tr><td><strong>Índice normativo</strong></td><td class="wrap">Recuperación de fragmentos para el RAG</td><td class="wrap"><code>rag/indice_rag.json</code> (75 fragmentos); ver nota de escalado en §05</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 03 GPU -->
+      <section id="gpu">
+        <div class="section-head"><span class="section-num">03</span><h2>GPU y memoria mínima</h2></div>
+        <div class="prose">
+          <p>El requisito no es teórico: este informe se escribió corriendo los tres LLM, el modelo de embeddings, YOLO y EasyOCR sobre el mismo equipo de desarrollo, un <strong>Apple M3 con 8&nbsp;GB de memoria unificada</strong>. Con un solo LLM cargado a la vez (carga bajo demanda de LM Studio) el sistema funciona, pero con poco margen — de ahí la recomendación de 16&nbsp;GB para producción.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Componente</th><th>Tamaño en disco</th><th class="wrap">Notas</th></tr></thead>
+            <tbody>
+              <tr><td>gemma-2-2b-it (Q5_K_M)</td><td class="num mono">1.8 GB</td><td class="wrap">LLM candidato — más lento, más contexto de mundo</td></tr>
+              <tr><td>Llama-3.2-3B-Instruct (Q4_K_M)</td><td class="num mono">1.9 GB</td><td class="wrap">LLM candidato — el más rápido en los benchmarks de §07</td></tr>
+              <tr><td>Qwen3-VL-4B (MLX 4-bit)</td><td class="num mono">2.9 GB</td><td class="wrap">LLM candidato, multimodal (no se usó su capacidad visual en el PoC)</td></tr>
+              <tr><td>nomic-embed-text-v1.5</td><td class="num mono">80 MB</td><td class="wrap">Embeddings para el retrieval del RAG</td></tr>
+              <tr><td>YOLOv8n (fine-tuned)</td><td class="num mono">≈ 6 MB</td><td class="wrap">Detección producto + sello</td></tr>
+              <tr><td>EasyOCR (es+en)</td><td class="num mono">≈ 100 MB</td><td class="wrap">Lectura de texto del sello</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="spec-strip">
+          <div><div class="k">Mínimo validado</div><div class="v">8 GB <small>VRAM / unificada</small></div></div>
+          <div><div class="k">Recomendado</div><div class="v">16 GB <small>margen para SO + picos</small></div></div>
+          <div><div class="k">Sin GPU dedicado</div><div class="v">Viable <small>CPU: solo YOLO+OCR ágiles, LLM más lento</small></div></div>
+          <div><div class="k">Backend de cómputo</div><div class="v">MPS / CUDA <small>según plataforma, vía PyTorch</small></div></div>
+        </div>
+
+        <div class="callout">
+          <span class="lbl">Por qué importa</span>
+          <p>Con solo un LLM residente (~1.9–2.9 GB) + embeddings (80 MB) + YOLO + OCR (~110 MB) + sistema operativo, el uso ronda 5–6 GB en este equipo de 8 GB — funciona, pero deja poco margen para el navegador del frontend y otras apps. Por eso 8 GB es el <em>piso</em> observado, no el objetivo de diseño.</p>
+        </div>
+      </section>
+
+      <!-- 04 RED -->
+      <section id="red">
+        <div class="section-head"><span class="section-num">04</span><h2>Red y NSG</h2></div>
+        <div class="prose">
+          <p>El cómputo es local, pero la red igual necesita reglas explícitas: el objetivo es que el dispositivo del kiosco <strong>nunca sea alcanzable desde internet</strong> y que, si en el futuro se administran varios colegios desde un punto central (por ejemplo JUNAEB a nivel regional), un kiosco comprometido no pueda ver ni contactar a otro.</p>
+        </div>
+
+        <figure>
+          <div class="diagram-frame">
+            <svg viewBox="0 0 980 460" role="img" aria-label="Diagrama de red: la LAN de cada colegio contiene el dispositivo edge, accesible solo desde esa LAN por 443; el edge solo puede salir por 443 hacia el endpoint de actualizaciones en la gestión central; el tráfico edge-a-edge entre colegios está denegado por NSG." xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+                </marker>
+                <marker id="arrGood" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#256B4C"/>
+                </marker>
+                <marker id="arrBad" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#A83B27"/>
+                </marker>
+              </defs>
+
+              <!-- Colegio A subnet -->
+              <rect x="40" y="60" width="330" height="220" rx="8" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="58" y="46" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="0.04em" fill="currentColor" opacity="0.75">SUBNET kiosco-edge — COLEGIO A (192.168.1.0/24)</text>
+
+              <rect x="70" y="150" width="130" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="135" y="174" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">Dispositivo edge</text>
+              <text x="135" y="190" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">cámara + inferencia</text>
+
+              <rect x="240" y="150" width="110" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="295" y="174" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">Kiosquero</text>
+              <text x="295" y="190" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">navegador LAN</text>
+
+              <line x1="200" y1="178" x2="235" y2="178" stroke="#256B4C" stroke-width="1.6" marker-end="url(#arrGood)"/>
+              <text x="204" y="170" font-family="IBM Plex Mono, monospace" font-size="9" fill="#256B4C">443 solo LAN</text>
+
+              <!-- Colegio B subnet (isolated) -->
+              <rect x="40" y="320" width="330" height="110" rx="8" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="58" y="306" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="0.04em" fill="currentColor" opacity="0.75">SUBNET kiosco-edge — COLEGIO B (192.168.2.0/24)</text>
+              <rect x="70" y="350" width="130" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="135" y="374" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">Dispositivo edge</text>
+              <text x="135" y="390" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">cámara + inferencia</text>
+
+              <!-- denied edge-to-edge -->
+              <path d="M135,206 C 135,260 135,300 135,346" fill="none" stroke="#A83B27" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#arrBad)"/>
+              <text x="145" y="270" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#A83B27">NSG-Edge: deny</text>
+              <text x="145" y="282" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#A83B27">edge ↔ edge (todo puerto)</text>
+
+              <!-- Gestion central subnet -->
+              <rect x="620" y="60" width="320" height="370" rx="8" fill="#1B5E5A" opacity="0.06" stroke="#1B5E5A" stroke-width="1.4"/>
+              <text x="638" y="46" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="0.04em" fill="#1B5E5A">SUBNET gestion-central (opcional)</text>
+
+              <rect x="660" y="120" width="240" height="60" rx="5" fill="none" stroke="#1B5E5A" stroke-width="1.5"/>
+              <text x="780" y="146" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="#1B5E5A">Servidor de actualizaciones</text>
+              <text x="780" y="163" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="#1B5E5A" opacity="0.8">modelo + corpus RAG</text>
+
+              <rect x="660" y="220" width="240" height="60" rx="5" fill="none" stroke="#1B5E5A" stroke-width="1.5"/>
+              <text x="780" y="246" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="#1B5E5A">Métricas agregadas</text>
+              <text x="780" y="263" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="#1B5E5A" opacity="0.8">conteos, sin video ni PII</text>
+
+              <rect x="660" y="330" width="240" height="60" rx="5" fill="none" stroke="#1B5E5A" stroke-width="1.5" stroke-dasharray="3 3"/>
+              <text x="780" y="356" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="#1B5E5A">VPN administración</text>
+              <text x="780" y="373" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="#1B5E5A" opacity="0.8">único acceso de gestión</text>
+
+              <!-- edge A -> central: outbound only, 443 -->
+              <path d="M370,178 C 480,178 560,150 655,150" fill="none" stroke="#256B4C" stroke-width="1.5" marker-end="url(#arrGood)"/>
+              <text x="410" y="140" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#256B4C">saliente 443 · poll semanal</text>
+
+              <!-- edge B -> central -->
+              <path d="M370,380 C 480,380 560,240 655,242" fill="none" stroke="#256B4C" stroke-width="1.5" marker-end="url(#arrGood)"/>
+              <text x="410" y="410" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#256B4C">saliente 443 · métricas anónimas</text>
+
+              <!-- denied inbound from internet to edge -->
+              <text x="205" y="105" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#A83B27" text-anchor="middle">NSG-Edge: deny todo inbound salvo LAN local · deny todo outbound salvo :443 a gestión-central</text>
+
+            </svg>
+          </div>
+          <figcaption>Cada colegio es su propio segmento aislado: NSG-Edge deniega tráfico entrante salvo desde la LAN del propio colegio (puerto 443, frontend) y deniega todo saliente salvo el chequeo periódico hacia el endpoint fijo de actualizaciones. El tráfico edge-a-edge entre colegios está explícitamente denegado — un dispositivo comprometido no puede alcanzar a otro. La gestión central solo recibe métricas agregadas, nunca video.</figcaption>
+        </figure>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Regla NSG</th><th>Dirección</th><th>Origen</th><th>Destino</th><th>Puerto</th><th>Acción</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">NSG-Edge-01</td><td>Inbound</td><td class="wrap">LAN del colegio (/24 propio)</td><td>Dispositivo edge</td><td class="mono">443</td><td><span class="pill good">Allow</span></td></tr>
+              <tr><td class="mono">NSG-Edge-02</td><td>Inbound</td><td class="wrap">Cualquier otro origen (incl. internet)</td><td>Dispositivo edge</td><td class="mono">*</td><td><span class="pill bad">Deny</span></td></tr>
+              <tr><td class="mono">NSG-Edge-03</td><td>Outbound</td><td>Dispositivo edge</td><td class="wrap">Endpoint fijo de actualizaciones</td><td class="mono">443</td><td><span class="pill good">Allow</span></td></tr>
+              <tr><td class="mono">NSG-Edge-04</td><td>Outbound</td><td>Dispositivo edge</td><td class="wrap">Cualquier otro destino (incl. otro edge)</td><td class="mono">*</td><td><span class="pill bad">Deny</span></td></tr>
+              <tr><td class="mono">NSG-Central-01</td><td>Inbound</td><td class="wrap">IP registradas de dispositivos edge</td><td class="wrap">Servidor de actualizaciones</td><td class="mono">443</td><td><span class="pill good">Allow</span></td></tr>
+              <tr><td class="mono">NSG-Central-02</td><td>Inbound</td><td class="wrap">Fuera de la VPN de administración</td><td class="wrap">Subnet gestión-central completa</td><td class="mono">*</td><td><span class="pill bad">Deny</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 05 ESCALABILIDAD -->
+      <section id="escalabilidad">
+        <div class="section-head"><span class="section-num">05</span><h2>Escalabilidad y costos</h2></div>
+        <div class="prose">
+          <p>El diseño recomendado es <strong>un dispositivo edge por kiosco/cámara</strong>, no un servidor central que atienda a muchos kioscos por red. Esto no es solo una decisión de privacidad: es también la opción más barata de escalar, porque el costo crece lineal y predeciblemente, sin cuello de botella compartido.</p>
+        </div>
+
+        <div class="callout">
+          <span class="lbl">Costo de escalar a N kioscos</span>
+          <p class="mono" style="font-size:1.05rem">Costo(N) = N × costo_dispositivo_edge + costo_fijo_gestión_central</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Opción de hardware edge</th><th class="num">Precio ref. (2026)</th><th>GPU / memoria</th><th class="wrap">Cuándo conviene</th></tr></thead>
+            <tbody>
+              <tr><td>NVIDIA Jetson Orin Nano Super</td><td class="num mono">USD 399</td><td class="mono">8 GB unificada</td><td class="wrap">Más barato, pensado para inferencia edge; requiere más integración</td></tr>
+              <tr><td>Mac mini M4 16 GB</td><td class="num mono">USD 799</td><td class="mono">16 GB unificada</td><td class="wrap">Mejor balance: fácil de administrar, margen cómodo (recomendado)</td></tr>
+              <tr><td>Mini PC con RTX 4060 8 GB</td><td class="num mono">USD 1 200–1 500</td><td class="mono">8 GB VRAM dedicada</td><td class="wrap">Máximo desempeño si se agregan más cámaras por punto</td></tr>
+              <tr><td>Webcam USB 1080p</td><td class="num mono">USD 40–60</td><td class="mono">—</td><td class="wrap">Por cámara adicional en el mismo kiosco</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th class="num">N kioscos</th><th class="num">Costo total (Mac mini 16GB)</th><th class="num">Costo total (Jetson)</th><th class="wrap">Gestión central</th></tr></thead>
+            <tbody>
+              <tr><td class="num mono">1</td><td class="num mono">USD 850</td><td class="num mono">USD 450</td><td class="wrap">No requerida</td></tr>
+              <tr><td class="num mono">10</td><td class="num mono">USD 8 500</td><td class="num mono">USD 4 500</td><td class="wrap">Opcional (VM liviana ~USD 40/mes)</td></tr>
+              <tr><td class="num mono">50</td><td class="num mono">USD 42 500</td><td class="num mono">USD 22 500</td><td class="wrap">Recomendada (~USD 60–100/mes)</td></tr>
+              <tr><td class="num mono">200 <span class="pill accent">red JUNAEB regional</span></td><td class="num mono">USD 170 000</td><td class="num mono">USD 90 000</td><td class="wrap">Requerida (~USD 150–250/mes)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:1.2rem; margin: 40px 0 14px;">¿Cuántas cámaras concurrentes soporta un mismo GPU?</h3>
+        <div class="prose">
+          <p>Esta pregunta solo tiene sentido si se decide <em>centralizar</em> — es decir, la alternativa al diseño recomendado. Con los tiempos medidos en §07:</p>
+          <ul>
+            <li><strong>Detección (YOLOv8n):</strong> en un GPU de gama de entrada (~150 FPS agregados estimados a 640px) y muestreando cada cámara a 2 FPS (más que suficiente — un producto no cambia 30 veces por segundo), un solo GPU alcanzaría para <strong>≈ 75 cámaras</strong> solo en la parte de visión.</li>
+            <li><strong>Chat (LLM + RAG):</strong> LM Studio no hace batching real; una respuesta con RAG toma 3.6–11.5&nbsp;s (medido, §07). Sin las preguntas del kiosquero no son continuas ni simultáneas, un mismo GPU sostiene razonablemente <strong>≈ 5–8 kioscos</strong> con chat ocasional antes de que las colas se noten.</li>
+          </ul>
+          <p>Es decir: en un esquema centralizado, el <strong>LLM es el cuello de botella</strong>, no la visión — un servidor cae a servir bien solo un puñado de kioscos con chat. El diseño de un dispositivo por kiosco evita ese techo por completo: cada cámara tiene su propio GPU dedicado, así que no hay contención entre kioscos y el costo escala de forma predecible con N.</p>
+        </div>
+      </section>
+
+      <!-- 06 LOCAL VS CLOUD -->
+      <section id="local-vs-cloud">
+        <div class="section-head"><span class="section-num">06</span><h2>Por qué IA local y no Cloud</h2></div>
+        <div class="prose">
+          <ul>
+            <li><strong>Privacidad de menores:</strong> el video del kiosco nunca sale del colegio — no hay proveedor externo procesando cámaras en un contexto escolar.</li>
+            <li><strong>Costo marginal cero:</strong> sin cobro por token/consulta; en un colegio con cientos de escaneos diarios, un año de API cloud costaría más que el hardware edge completo.</li>
+            <li><strong>Funciona sin internet estable:</strong> muchos establecimientos JUNAEB tienen conectividad intermitente — el veredicto y el chat deben funcionar igual.</li>
+            <li><strong>Latencia:</strong> sin round-trip a un datacenter remoto para el camino de visión, que es el que necesita responder casi al instante.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 07 EVIDENCIA -->
+      <section id="evidencia">
+        <div class="section-head"><span class="section-num">07</span><h2>Evidencia empírica</h2></div>
+        <div class="prose">
+          <p>Números medidos en este proyecto, no estimaciones — CSV completos en <code>resultados_llms_v2.csv</code> y <code>rag/resultados_con_sin_rag.csv</code>.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Modelo</th><th class="num">Tiempo prom. (clasificación)</th><th class="num">Tokens/s</th><th class="num">Sin RAG</th><th class="num">Con RAG</th></tr></thead>
+            <tbody>
+              <tr><td>gemma-2-2b-it</td><td class="num mono">3.01 s</td><td class="num mono">22.2</td><td class="num mono">5.35 s</td><td class="num mono">5.94 s</td></tr>
+              <tr><td>Llama-3.2-3B-Instruct</td><td class="num mono">2.16 s</td><td class="num mono">33.5</td><td class="num mono">3.62 s</td><td class="num mono">7.54 s</td></tr>
+              <tr><td>Qwen3-VL-4B</td><td class="num mono">3.31 s</td><td class="num mono">26.7</td><td class="num mono">6.14 s</td><td class="num mono">11.54 s</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <span class="lbl">Hallazgo clave del RAG</span>
+          <p>Sin RAG, los 3 modelos alucinaron cifras <em>distintas y falsas</em> para el límite de sodio (2400&nbsp;mg, 150&nbsp;mg, ≤120&nbsp;mg/100g); con RAG los 3 convergieron en la cifra real (400&nbsp;mg/100g, etapa 3) citando la fuente. Pero el RAG <strong>no corrigió</strong> errores de razonamiento sobre la condición legal (p. ej. que un solo sello ya basta según el art. 110 bis, que usa "o" entre nutrientes) — el modelo recuperó el fragmento correcto y aun así interpretó mal la condición. Detalle completo en <code>rag/resultados_con_sin_rag.csv</code>.</p>
+        </div>
+      </section>
+
+      <!-- 08 ESTADO -->
+      <section id="estado">
+        <div class="section-head"><span class="section-num">08</span><h2>Estado del proyecto</h2></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Componente</th><th>Estado</th><th class="wrap">Detalle</th></tr></thead>
+            <tbody>
+              <tr><td>LLM (3 modelos)</td><td><span class="pill good">Listo</span></td><td class="wrap">Comparados con casos de prueba incl. prompt injection</td></tr>
+              <tr><td>RAG normativo</td><td><span class="pill good">Listo</span></td><td class="wrap">Corpus real (Ley 20.606, Decreto 13, Guía MINSAL), validado con/sin RAG</td></tr>
+              <tr><td>Pipeline de visión</td><td><span class="pill accent">Código listo</span></td><td class="wrap">YOLO + traslape + OCR + regla de negocio; falta entrenar con dataset propio</td></tr>
+              <tr><td>Dataset de fotos</td><td><span class="pill amber">En curso</span></td><td class="wrap">80/120 fotos tomadas, etiquetado pendiente</td></tr>
+              <tr><td>Frontend unificado</td><td><span class="pill amber">Pendiente</span></td><td class="wrap">Integrar cámara en vivo + chat en una sola interfaz</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer>
+        <span>Kiosco Escolar Saludable — TICS867 IA MultiCloud, Magíster</span>
+        <span>rag/ · vision/ · informe/</span>
+      </footer>
+
+    </main>
+  </div>
+</div>
