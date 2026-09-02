@@ -4,11 +4,10 @@ usa cv2.selectROIs para dibujar cajas con el mouse sobre cada foto y guarda las
 anotaciones en formato YOLO.
 
 Flujo por cada foto en dataset/images_sin_etiquetar/:
-  1. Se abre una ventana pidiendo dibujar la(s) caja(s) de la clase "producto"
-     (el envase completo del producto).
-  2. Se abre otra ventana pidiendo dibujar la(s) caja(s) de la clase "sello"
-     (cada octágono negro "ALTO EN..." visible).
-  3. Se guarda la imagen + un .txt en formato YOLO en dataset/etiquetadas/.
+  1. Se abre una ventana pidiendo dibujar la(s) caja(s) de la clase "sello"
+     (cada octágono negro "ALTO EN..." visible). No se etiqueta "producto": esa caja se
+     deriva después agrupando los sellos por cercanía (ver vision_utils.py).
+  2. Se guarda la imagen + un .txt en formato YOLO en dataset/etiquetadas/.
 
 Controles de cv2.selectROIs:
   - Arrastra con el mouse para dibujar una caja, ENTER o ESPACIO para confirmarla y
@@ -29,7 +28,7 @@ CARPETA_ENTRADA = CARPETA / "dataset" / "images_sin_etiquetar"
 CARPETA_IMG_SALIDA = CARPETA / "dataset" / "etiquetadas" / "images"
 CARPETA_LBL_SALIDA = CARPETA / "dataset" / "etiquetadas" / "labels"
 
-CLASES = ["producto", "sello"]
+CLASES = ["sello"]
 EXTENSIONES = {".jpg", ".jpeg", ".png"}
 
 MAX_ANCHO_VENTANA = 1000

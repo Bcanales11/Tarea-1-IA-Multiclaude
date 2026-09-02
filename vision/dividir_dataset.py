@@ -14,7 +14,7 @@ from pathlib import Path
 CARPETA = Path(__file__).parent
 CARPETA_DATASET = CARPETA / "dataset"
 CARPETA_ETIQUETADAS = CARPETA_DATASET / "etiquetadas"
-CLASES = ["producto", "sello"]
+CLASES = ["sello"]
 
 
 def limpiar_split_previo():
@@ -57,13 +57,13 @@ def main():
 
     print(f"Split hecho: {contador['train']} train / {contador['val']} val")
 
+    nombres_yaml = "\n".join(f"  {i}: {nombre}" for i, nombre in enumerate(CLASES))
     yaml_contenido = f"""# Generado por dividir_dataset.py
 path: {CARPETA_DATASET.resolve()}
 train: images/train
 val: images/val
 names:
-  0: {CLASES[0]}
-  1: {CLASES[1]}
+{nombres_yaml}
 """
     ruta_yaml = CARPETA_DATASET / "dataset.yaml"
     ruta_yaml.write_text(yaml_contenido, encoding="utf-8")

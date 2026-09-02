@@ -16,23 +16,25 @@ import torch
 from ultralytics import YOLO
 
 from vision_utils import (
-    ID_PRODUCTO,
-    ID_SELLO,
     RUTA_PESOS_DEFAULT,
     UMBRAL_CONFIANZA_DEFAULT,
+    agrupar_sellos_en_productos,
     clasificar_texto_sello,
     evaluar_regla_negocio,
-    sello_esta_dentro_de_producto,
 )
 
 _lector_ocr = None
+
+
+def hay_gpu_disponible():
+    return torch.cuda.is_available() or torch.backends.mps.is_available()
 
 
 def obtener_lector_ocr():
     global _lector_ocr
     if _lector_ocr is None:
         print("Cargando modelo de OCR (EasyOCR, primera vez descarga los pesos)...")
-        _lector_ocr = easyocr.Reader(["es", "en"], gpu=torch.backends.mps.is_available())
+        _lector_ocr = easyocr.Reader(["es", "en"], gpu=hay_gpu_disponible())
     return _lector_ocr
 
 
@@ -49,26 +51,25 @@ def analizar_frame(modelo, frame, confianza=UMBRAL_CONFIANZA_DEFAULT):
     """Corre la detección + lógica adicional sobre un frame y devuelve una lista de
     productos evaluados: [{"caja": (x1,y1,x2,y2), "apto": bool, "nutrientes": [...],
     "motivo": str, "sellos_cajas": [...]}, ...]. Reutilizable desde otros scripts
-    (por ejemplo la futura interfaz web que una visión + LLM)."""
-    resultado = modelo.predict(frame, conf=confianza, verbose=False)[0]
+    (por ejemplo la futura interfaz web que una visión + LLM).
 
-    productos, sellos = [], []
-    for caja, cls_id in zip(resultado.boxes.xyxy.tolist(), resultado.boxes.cls.tolist()):
-        (productos if int(cls_id) == ID_PRODUCTO else sellos).append(caja)
+    No hay una clase "producto" entrenada (ver vision_utils.py): los sellos detectados se
+    agrupan por cercanía relativa a su propio tamaño (`agrupar_sellos_en_productos`), y
+    cada grupo se trata como un producto distinto."""
+    resultado = modelo.predict(frame, conf=confianza, verbose=False)[0]
+    sellos = resultado.boxes.xyxy.tolist()
 
     productos_evaluados = []
-    for caja_producto in productos:
-        sellos_del_producto = [s for s in sellos if sello_esta_dentro_de_producto(s, caja_producto)]
-
+    for grupo in agrupar_sellos_en_productos(sellos):
         nutrientes = []
-        for caja_sello in sellos_del_producto:
+        for caja_sello in grupo["sellos_cajas"]:
             texto = leer_texto_en_caja(frame, caja_sello)
             nutrientes.append(clasificar_texto_sello(texto))
 
         veredicto = evaluar_regla_negocio(nutrientes)
         productos_evaluados.append({
-            "caja": caja_producto,
-            "sellos_cajas": sellos_del_producto,
+            "caja": grupo["caja_producto"],
+            "sellos_cajas": grupo["sellos_cajas"],
             **veredicto,
         })
 
@@ -76,10 +77,15 @@ def analizar_frame(modelo, frame, confianza=UMBRAL_CONFIANZA_DEFAULT):
 
 
 def dibujar_resultado(frame, productos_evaluados):
+    alto_frame, ancho_frame = frame.shape[:2]
     for prod in productos_evaluados:
-        x1, y1, x2, y2 = [int(v) for v in prod["caja"]]
+        x1, y1, x2, y2 = prod["caja"]
+        x1 = max(0, int(x1))
+        y1 = max(0, int(y1))
+        x2 = min(ancho_frame - 1, int(x2))
+        y2 = min(alto_frame - 1, int(y2))
         color = (0, 170, 0) if prod["apto"] else (0, 0, 220)
-        etiqueta = "APTO" if prod["apto"] else f"NO APTO ({len(prod['nutrientes'])} sello/s)"
+        etiqueta = "APTO" if prod["apto"] else f"NO APTO ({len(prod['sellos_cajas'])} sello/s)"
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
         cv2.putText(frame, etiqueta, (x1, max(20, y1 - 10)),
@@ -91,24 +97,33 @@ def dibujar_resultado(frame, productos_evaluados):
     return frame
 
 
-def correr_camara(modelo, indice_camara=0):
+INTERVALO_ANALISIS = 5  # analiza (YOLO + OCR) 1 de cada N frames; el resto solo redibuja
+                         # el último resultado. El OCR es lo más pesado (se corre 1 vez por
+                         # sello detectado), y el producto no cambia 30 veces por segundo, así
+                         # que no hace falta analizar cada frame para que se vea fluido.
+
+
+def correr_camara(modelo, indice_camara=0, intervalo_analisis=INTERVALO_ANALISIS):
     cap = cv2.VideoCapture(indice_camara)
     if not cap.isOpened():
         print(f"No se pudo abrir la cámara {indice_camara}.")
         return
 
     print("Cámara abierta. Presiona 'q' para salir.")
+    productos_evaluados = []
+    contador_frames = 0
     while True:
         ok, frame = cap.read()
         if not ok:
             break
 
-        productos_evaluados = analizar_frame(modelo, frame)
+        if contador_frames % intervalo_analisis == 0:
+            productos_evaluados = analizar_frame(modelo, frame)
+            for prod in productos_evaluados:
+                print(f"  -> apto={prod['apto']} | nutrientes={prod['nutrientes']} | {prod['motivo']}")
+        contador_frames += 1
+
         frame = dibujar_resultado(frame, productos_evaluados)
-
-        for prod in productos_evaluados:
-            print(f"  -> apto={prod['apto']} | nutrientes={prod['nutrientes']} | {prod['motivo']}")
-
         cv2.imshow("Kiosco Escolar Saludable - deteccion en vivo", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
@@ -142,8 +157,10 @@ def main():
     parser.add_argument("--camara", type=int, default=0)
     args = parser.parse_args()
 
-    print(f"Cargando modelo YOLO: {args.pesos}")
+    device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
+    print(f"Cargando modelo YOLO: {args.pesos} (device={device})")
     modelo = YOLO(args.pesos)
+    modelo.to(device)
 
     if args.imagen:
         correr_una_imagen(modelo, args.imagen)

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kiosco Escolar Saludable</title>
+<style>
+  :root {
+    --bg: #F2F5F4;
+    --surface: #FFFFFF;
+    --surface-sunken: #E9EFEE;
+    --ink: #142524;
+    --ink-muted: #4B615F;
+    --accent: #1B5E5A;
+    --accent-strong: #0F3E3B;
+    --line: #D3DCDA;
+    --good: #256B4C;
+    --good-soft: #DDEDE3;
+    --bad: #A83B27;
+    --bad-soft: #F6DFD8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    padding: 20px 28px;
+    background: var(--accent);
+    color: white;
+  }
+  header h1 { margin: 0; font-size: 1.3rem; }
+  header p { margin: 4px 0 0; font-size: 0.85rem; opacity: 0.85; }
+
+  .shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 24px;
+  }
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab-btn {
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    background: var(--surface-sunken);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--ink-muted);
+  }
+  .tab-btn.activo { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .video-wrap {
+    position: relative;
+    background: #000;
+    border-radius: 6px;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+  }
+  video, canvas, .video-wrap img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+  canvas.overlay {
+    position: absolute;
+    top: 0; left: 0;
+    pointer-events: none;
+  }
+
+  .btn {
+    margin-top: 14px;
+    padding: 10px 18px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  .btn:hover { background: var(--accent-strong); }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+
+  .resultado { margin-top: 16px; }
+  .veredicto {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .veredicto.apto { background: var(--good-soft); color: var(--good); }
+  .veredicto.no-apto { background: var(--bad-soft); color: var(--bad); }
+  .motivo { margin-top: 8px; font-size: 0.88rem; color: var(--ink-muted); }
+  .explicacion {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: var(--surface-sunken);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+  }
+  .explicacion .lbl {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent-strong);
+    margin-bottom: 4px;
+  }
+  .sin-deteccion { color: var(--ink-muted); font-size: 0.9rem; margin-top: 12px; }
+
+  /* Chat */
+  .chat-panel { display: flex; flex-direction: column; height: 100%; min-height: 480px; }
+  .chat-mensajes {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 4px;
+    margin-bottom: 12px;
+  }
+  .msg { max-width: 90%; padding: 10px 13px; border-radius: 10px; font-size: 0.88rem; line-height: 1.45; }
+  .msg.usuario { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 2px; }
+  .msg.bot { align-self: flex-start; background: var(--surface-sunken); border-bottom-left-radius: 2px; }
+  .msg .fuentes { display: block; margin-top: 6px; font-size: 0.72rem; opacity: 0.7; }
+
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input-row input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+  .chat-input-row button {
+    padding: 10px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Kiosco Escolar Saludable</h1>
+  <p>Visión local (YOLO + OCR) + LLM local con RAG normativo — 100% on-device</p>
+</header>
+
+<div class="shell">
+
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab-btn activo" id="tab-foto">Escaneo por foto</button>
+      <button class="tab-btn" id="tab-continuo">Cámara continua</button>
+    </div>
+
+    <!-- Modo foto -->
+    <div id="modo-foto">
+      <div class="video-wrap">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="overlay" class="overlay"></canvas>
+      </div>
+      <button class="btn" id="btn-escanear">Escanear producto</button>
+      <div class="resultado" id="resultado-foto"></div>
+    </div>
+
+    <!-- Modo continuo -->
+    <div id="modo-continuo" style="display:none;">
+      <div class="video-wrap">
+        <img id="stream" src="" alt="Cámara en vivo">
+      </div>
+      <div class="resultado" id="resultado-continuo"></div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:20px 0;">
+
+    <!-- Resumen del día: el LLM lee el historial real de escaneos, no solo la ley -->
+    <div id="panel-resumen">
+      <h3 style="margin:0 0 10px;">Resumen del día</h3>
+      <button class="btn" id="btn-resumen" style="margin-top:0;">Generar resumen</button>
+      <div id="resumen-contenido" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <div class="panel chat-panel">
+    <h3 style="margin-top:0;">Pregúntale al asistente</h3>
+    <div class="chat-mensajes" id="chat-mensajes">
+      <div class="msg bot">Hola, soy el asistente del kiosco. Puedes preguntarme sobre la Ley 20.606, el Reglamento Sanitario de los Alimentos o la Guía de Kioscos Saludables.</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Ej: ¿puedo vender frutos secos a granel?">
+      <button id="chat-enviar">Enviar</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const tabFoto = document.getElementById('tab-foto');
+const tabContinuo = document.getElementById('tab-continuo');
+const modoFoto = document.getElementById('modo-foto');
+const modoContinuo = document.getElementById('modo-continuo');
+const streamImg = document.getElementById('stream');
+
+let modoActivo = 'foto';
+let pollEstadoTimer = null;
+
+// --- Modo foto: cámara del navegador ---
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+const ctx = overlay.getContext('2d');
+
+function iniciarCamaraFoto() {
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => { video.srcObject = stream; })
+    .catch(err => {
+      document.getElementById('resultado-foto').innerHTML =
+        '<p class="sin-deteccion">No se pudo acceder a la cámara: ' + err.message + '</p>';
+    });
+}
+
+function detenerCamaraFoto() {
+  // Suelta la cámara del navegador — si no, el backend no puede abrirla para el modo
+  // continuo (Windows no deja que dos procesos usen la webcam al mismo tiempo).
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(track => track.stop());
+    video.srcObject = null;
+  }
+}
+
+function activarTab(modo) {
+  modoActivo = modo;
+  tabFoto.classList.toggle('activo', modo === 'foto');
+  tabContinuo.classList.toggle('activo', modo === 'continuo');
+  modoFoto.style.display = modo === 'foto' ? 'block' : 'none';
+  modoContinuo.style.display = modo === 'continuo' ? 'block' : 'none';
+
+  if (modo === 'continuo') {
+    detenerCamaraFoto();
+    // Pequeño margen para que el sistema operativo suelte la cámara antes de que el
+    // backend intente abrirla — si no, a veces todavía la ve "ocupada".
+    setTimeout(() => { streamImg.src = '/video_feed?t=' + Date.now(); }, 400);
+    pollEstadoTimer = setInterval(actualizarEstadoContinuo, 1000);
+  } else {
+    streamImg.src = '';
+    if (pollEstadoTimer) clearInterval(pollEstadoTimer);
+    iniciarCamaraFoto();
+  }
+}
+tabFoto.addEventListener('click', () => activarTab('foto'));
+tabContinuo.addEventListener('click', () => activarTab('continuo'));
+
+iniciarCamaraFoto();
+
+function dibujarCajas(productos, anchoReal, altoReal) {
+  overlay.width = video.clientWidth;
+  overlay.height = video.clientHeight;
+  const escalaX = overlay.width / anchoReal;
+  const escalaY = overlay.height / altoReal;
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  ctx.lineWidth = 2;
+  ctx.font = '14px sans-serif';
+
+  productos.forEach(prod => {
+    const color = prod.apto ? '#256B4C' : '#A83B27';
+    const [x1, y1, x2, y2] = prod.caja;
+    ctx.strokeStyle = color;
+    ctx.strokeRect(x1 * escalaX, y1 * escalaY, (x2 - x1) * escalaX, (y2 - y1) * escalaY);
+    ctx.fillStyle = color;
+    const etiqueta = prod.apto ? 'APTO' : `NO APTO (${prod.sellos_cajas.length} sello/s)`;
+    ctx.fillText(etiqueta, x1 * escalaX, Math.max(14, y1 * escalaY - 6));
+
+    ctx.strokeStyle = '#E08A2E';
+    prod.sellos_cajas.forEach(([sx1, sy1, sx2, sy2]) => {
+      ctx.strokeRect(sx1 * escalaX, sy1 * escalaY, (sx2 - sx1) * escalaX, (sy2 - sy1) * escalaY);
+    });
+  });
+}
+
+function renderResultado(contenedor, productos) {
+  if (!productos.length) {
+    contenedor.innerHTML = '<p class="sin-deteccion">No se detectó ningún sello en el encuadre.</p>';
+    return;
+  }
+  contenedor.innerHTML = productos.map(prod => `
+    <div class="veredicto ${prod.apto ? 'apto' : 'no-apto'}">${prod.apto ? 'APTO' : 'NO APTO'}</div>
+    <div class="motivo">${prod.motivo}</div>
+    ${prod.explicacion ? `<div class="explicacion"><span class="lbl">Explicación del asistente</span>${prod.explicacion}</div>` : ''}
+  `).join('<hr style="border:none;border-top:1px solid var(--line);margin:14px 0;">');
+}
+
+document.getElementById('btn-escanear').addEventListener('click', async () => {
+  const boton = document.getElementById('btn-escanear');
+  boton.disabled = true;
+  boton.textContent = 'Analizando...';
+
+  const canvasCaptura = document.createElement('canvas');
+  canvasCaptura.width = video.videoWidth;
+  canvasCaptura.height = video.videoHeight;
+  canvasCaptura.getContext('2d').drawImage(video, 0, 0);
+
+  canvasCaptura.toBlob(async (blob) => {
+    const formData = new FormData();
+    formData.append('imagen', blob, 'captura.jpg');
+    try {
+      const resp = await fetch('/api/escanear', { method: 'POST', body: formData });
+      const datos = await resp.json();
+      if (datos.error) throw new Error(datos.error);
+      dibujarCajas(datos.productos, datos.ancho, datos.alto);
+      renderResultado(document.getElementById('resultado-foto'), datos.productos);
+    } catch (err) {
+      document.getElementById('resultado-foto').innerHTML =
+        '<p class="sin-deteccion">Error: ' + err.message + '</p>';
+    } finally {
+      boton.disabled = false;
+      boton.textContent = 'Escanear producto';
+    }
+  }, 'image/jpeg', 0.92);
+});
+
+// --- Modo continuo: polling de estado ---
+async function actualizarEstadoContinuo() {
+  try {
+    const resp = await fetch('/api/estado');
+    const datos = await resp.json();
+    const contenedor = document.getElementById('resultado-continuo');
+    renderResultado(contenedor, datos.productos);
+    if (datos.explicacion) {
+      contenedor.innerHTML += `<div class="explicacion"><span class="lbl">Explicación del asistente</span>${datos.explicacion}</div>`;
+    }
+  } catch (err) { /* silencioso: puede que el backend aún no tenga nada que reportar */ }
+}
+
+// --- Chat ---
+const chatMensajes = document.getElementById('chat-mensajes');
+const chatInput = document.getElementById('chat-input');
+
+function agregarMensaje(texto, clase, fuentes) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + clase;
+  div.textContent = texto;
+  if (fuentes && fuentes.length) {
+    const span = document.createElement('span');
+    span.className = 'fuentes';
+    span.textContent = 'Fuentes: ' + fuentes.join(', ');
+    div.appendChild(span);
+  }
+  chatMensajes.appendChild(div);
+  chatMensajes.scrollTop = chatMensajes.scrollHeight;
+}
+
+async function enviarPregunta() {
+  const pregunta = chatInput.value.trim();
+  if (!pregunta) return;
+  agregarMensaje(pregunta, 'usuario');
+  chatInput.value = '';
+  agregarMensaje('Pensando...', 'bot');
+  const placeholder = chatMensajes.lastElementChild;
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pregunta }),
+    });
+    const datos = await resp.json();
+    placeholder.remove();
+    if (datos.error) throw new Error(datos.error);
+    agregarMensaje(datos.respuesta, 'bot', datos.fuentes);
+  } catch (err) {
+    placeholder.remove();
+    agregarMensaje('Error: ' + err.message, 'bot');
+  }
+}
+document.getElementById('chat-enviar').addEventListener('click', enviarPregunta);
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') enviarPregunta(); });
+
+// --- Resumen del día ---
+document.getElementById('btn-resumen').addEventListener('click', async () => {
+  const boton = document.getElementById('btn-resumen');
+  const contenedor = document.getElementById('resumen-contenido');
+  boton.disabled = true;
+  boton.textContent = 'Generando...';
+  try {
+    const resp = await fetch('/api/resumen');
+    const datos = await resp.json();
+    const stats = datos.stats;
+    contenedor.innerHTML = `
+      <div class="explicacion"><span class="lbl">Resumen (LLM)</span>${datos.resumen}</div>
+      <p class="motivo">Total: ${stats.total} · Aptos: ${stats.aptos} · No aptos: ${stats.no_aptos}</p>
+    `;
+  } catch (err) {
+    contenedor.innerHTML = '<p class="sin-deteccion">Error: ' + err.message + '</p>';
+  } finally {
+    boton.disabled = false;
+    boton.textContent = 'Generar resumen';
+  }
+});
+</script>
+
+</body>
+</html>
