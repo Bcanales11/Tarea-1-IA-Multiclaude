@@ -16,3 +16,7 @@ vision/dataset/labels/val/*
 
 # Entrenamientos de YOLO (pesos + logs, se regeneran con entrenar_yolo.py)
 vision/modelos/kiosco_saludable/
+
+# Fotos crudas del Jumbo (rar suelto en la raíz) y lotes armados para repartir por zip
+/Fotos/
+vision/dataset/lotes_para_repartir/
