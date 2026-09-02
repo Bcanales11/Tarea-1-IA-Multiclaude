@@ -31,8 +31,10 @@ from rag_utils import formatear_contexto, recuperar_contexto  # noqa: E402
 import historial  # noqa: E402
 
 LM_STUDIO_CHAT_URL = "http://localhost:1234/v1/chat/completions"
-# El más rápido en resultados_llms_v2.csv. Cambiar acá una vez el equipo termine de llenar
-# 'correcto_manual' en los CSV de comparación y confirme cuál es el mejor en calidad.
+# Confirmado: los 3 modelos acertaron 100% de los 16 casos de resultados_llms_v2.csv
+# (correcto_manual calculado objetivamente contra los sellos de cada caso, ver
+# calificar_llms.py) - con calidad empatada, Llama gana por ser el más rápido (~35-40%
+# más que Qwen3-VL y Gemma-2-2B). Detalle en informe/arquitectura_costos.html §07.
 MODELO_LLM = "llama-3.2-3b-instruct"
 
 SYSTEM_PROMPT_EXPLICACION = """Eres un asistente para kioscos escolares saludables en Chile.
