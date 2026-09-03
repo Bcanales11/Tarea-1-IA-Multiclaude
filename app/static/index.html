@@ -166,7 +166,7 @@
 
 <header>
   <h1>Kiosco Escolar Saludable</h1>
-  <p>Visión local (YOLO + OCR) + LLM local con RAG normativo — 100% on-device</p>
+  <p>Visión local (YOLO + OCR) + LLM local con RAG normativo. Todo corre en este equipo, sin internet</p>
 </header>
 
 <div class="shell">
@@ -243,7 +243,7 @@ function iniciarCamaraFoto() {
 }
 
 function detenerCamaraFoto() {
-  // Suelta la cámara del navegador — si no, el backend no puede abrirla para el modo
+  // Suelta la cámara del navegador; si no, el backend no puede abrirla para el modo
   // continuo (Windows no deja que dos procesos usen la webcam al mismo tiempo).
   if (video.srcObject) {
     video.srcObject.getTracks().forEach(track => track.stop());
@@ -261,7 +261,7 @@ function activarTab(modo) {
   if (modo === 'continuo') {
     detenerCamaraFoto();
     // Pequeño margen para que el sistema operativo suelte la cámara antes de que el
-    // backend intente abrirla — si no, a veces todavía la ve "ocupada".
+    // backend intente abrirla; si no, a veces todavía la ve "ocupada".
     setTimeout(() => { streamImg.src = '/video_feed?t=' + Date.now(); }, 400);
     pollEstadoTimer = setInterval(actualizarEstadoContinuo, 1000);
   } else {
