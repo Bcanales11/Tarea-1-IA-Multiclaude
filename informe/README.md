@@ -2,11 +2,10 @@
 
 - `arquitectura_costos.html`: fuente del informe (se puede abrir directo en el navegador).
 - `Informe_Kiosco_Escolar_Saludable.pdf`: versión para entregar, generada desde el HTML.
-- `capturas/`: capturas de pantalla de la app que muestra el informe (ver su README).
 
 ## Regenerar el PDF
 
-Después de editar el HTML o agregar capturas, desde la raíz del repo:
+Después de editar el HTML, desde la raíz del repo:
 
 ```
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu \

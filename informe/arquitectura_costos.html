@@ -182,19 +182,6 @@
   }
   figcaption strong { color: var(--ink); }
 
-  .captura {
-    display: block;
-    width: 100%;
-    min-height: 260px;
-    border: 1px dashed var(--accent);
-    border-radius: 4px;
-    background: var(--accent-soft);
-    color: var(--accent-strong);
-    font-size: 14px;
-    text-align: center;
-    padding: 110px 30px 0;
-    font-style: italic;
-  }
 
   /* ---------- tablas ---------- */
   .tcap { font-size: 14px; color: var(--ink-muted); margin: 22px 0 6px; }
@@ -206,6 +193,8 @@
   thead th { font-size: 13.5px; font-weight: 600; color: var(--ink-muted); background: var(--surface-sunken); }
   tbody tr:last-child td { border-bottom: none; }
   td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
+  table.metricas { table-layout: fixed; }
+  table.metricas th, table.metricas td { text-align: center; font-variant-numeric: tabular-nums; }
 
   .pill {
     display: inline-block;
@@ -240,7 +229,7 @@
     .indice { page-break-after: always; margin-bottom: 0; }
     section { margin-top: 28px; }
     h2, h3 { page-break-after: avoid; }
-    figure, .table-wrap, .captura { page-break-inside: avoid; }
+    figure, .table-wrap { page-break-inside: avoid; }
     tr { page-break-inside: avoid; }
     table { min-width: 0; }
     th, td { font-size: 9.5pt; padding: 6px 9px; white-space: normal; }
@@ -461,20 +450,8 @@
         <p>Para arrancar la aplicación se ejecuta el servidor Flask y se abre el navegador en el puerto local 5050. El escaneo funciona aunque LM Studio no esté abierto; en ese caso solo faltan la explicación y el chat.</p>
       </div>
 
-      <figure>
-        <img class="captura" src="capturas/01_escaneo_no_apto.png" alt="Captura pendiente: pantalla principal con un producto escaneado, las cajas de los sellos dibujadas y el veredicto NO APTO con la explicación del modelo de lenguaje.">
-        <figcaption><strong>Figura 2.</strong> Pantalla principal con un producto no apto: cajas de los sellos detectados, veredicto y explicación redactada por el modelo de lenguaje.</figcaption>
-      </figure>
 
-      <figure>
-        <img class="captura" src="capturas/02_chat_rag.png" alt="Captura pendiente: panel de chat con una pregunta del kiosquero y la respuesta del modelo citando la fuente normativa.">
-        <figcaption><strong>Figura 3.</strong> Panel de chat con RAG: pregunta del kiosquero y respuesta con la fuente citada.</figcaption>
-      </figure>
 
-      <figure>
-        <img class="captura" src="capturas/03_resumen_diario.png" alt="Captura pendiente: resumen diario generado por el modelo de lenguaje a partir del historial de escaneos.">
-        <figcaption><strong>Figura 4.</strong> Resumen del día generado a partir del historial guardado en SQLite.</figcaption>
-      </figure>
     </section>
 
     <!-- 4 GPU -->
@@ -523,7 +500,7 @@
 
       <figure>
         <div class="diagram-frame">
-<svg viewBox="0 0 980 460" role="img" aria-label="Diagrama de red: la LAN de cada colegio contiene el dispositivo edge, accesible solo desde esa LAN por 443; el edge solo puede salir por 443 hacia el endpoint de actualizaciones en la gestión central; el tráfico edge-a-edge entre colegios está denegado por NSG." xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 980 470" role="img" aria-label="Diagrama de red: cada colegio es una subred aislada; el equipo del kiosco solo acepta tráfico desde la LAN del colegio por 443 y solo sale por 443 hacia la gestión central; el tráfico entre kioscos de distintos colegios está denegado." xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                   <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
@@ -536,63 +513,63 @@
                 </marker>
               </defs>
 
-              <!-- Colegio A subnet -->
-              <rect x="40" y="60" width="330" height="220" rx="8" fill="none" stroke="currentColor" stroke-width="1.4"/>
-              <text x="58" y="46" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="0.04em" fill="currentColor" opacity="0.75">SUBNET kiosco-edge — COLEGIO A (192.168.1.0/24)</text>
+              <!-- Subred colegio A -->
+              <rect x="40" y="40" width="380" height="210" rx="8" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="58" y="64" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="0.04em" fill="currentColor" opacity="0.75">SUBRED kiosco, COLEGIO A (192.168.1.0/24)</text>
 
-              <rect x="70" y="150" width="130" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-              <text x="135" y="174" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">Dispositivo edge</text>
-              <text x="135" y="190" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">cámara + inferencia</text>
+              <rect x="70" y="100" width="140" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="140" y="124" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">Equipo del kiosco</text>
+              <text x="140" y="140" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">cámara + inferencia</text>
 
-              <rect x="240" y="150" width="110" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-              <text x="295" y="174" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">Kiosquero</text>
-              <text x="295" y="190" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">navegador LAN</text>
+              <rect x="290" y="100" width="110" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="345" y="124" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">Kiosquero</text>
+              <text x="345" y="140" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">navegador en la LAN</text>
 
-              <line x1="200" y1="178" x2="235" y2="178" stroke="#256B4C" stroke-width="1.6" marker-end="url(#arrGood)"/>
-              <text x="204" y="170" font-family="IBM Plex Mono, monospace" font-size="9" fill="#256B4C">443 solo LAN</text>
+              <line x1="285" y1="128" x2="215" y2="128" stroke="#256B4C" stroke-width="1.6" marker-end="url(#arrGood)"/>
+              <text x="250" y="94" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#256B4C">443, solo LAN</text>
 
-              <!-- Colegio B subnet (isolated) -->
-              <rect x="40" y="320" width="330" height="110" rx="8" fill="none" stroke="currentColor" stroke-width="1.4"/>
-              <text x="58" y="306" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="0.04em" fill="currentColor" opacity="0.75">SUBNET kiosco-edge — COLEGIO B (192.168.2.0/24)</text>
-              <rect x="70" y="350" width="130" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-              <text x="135" y="374" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">Dispositivo edge</text>
-              <text x="135" y="390" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">cámara + inferencia</text>
+              <text x="70" y="196" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#A83B27">NSG-Edge: entrada denegada salvo LAN del colegio (443)</text>
+              <text x="70" y="212" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#A83B27">salida denegada salvo 443 hacia gestión central</text>
 
-              <!-- denied edge-to-edge -->
-              <path d="M135,206 C 135,260 135,300 135,346" fill="none" stroke="#A83B27" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#arrBad)"/>
-              <text x="145" y="270" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#A83B27">NSG-Edge: deny</text>
-              <text x="145" y="282" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#A83B27">edge ↔ edge (todo puerto)</text>
+              <!-- Subred colegio B -->
+              <rect x="40" y="320" width="380" height="120" rx="8" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="58" y="344" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="0.04em" fill="currentColor" opacity="0.75">SUBRED kiosco, COLEGIO B (192.168.2.0/24)</text>
+              <rect x="70" y="364" width="140" height="56" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+              <text x="140" y="388" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="currentColor">Equipo del kiosco</text>
+              <text x="140" y="404" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="currentColor" opacity="0.65">cámara + inferencia</text>
 
-              <!-- Gestion central subnet -->
-              <rect x="620" y="60" width="320" height="370" rx="8" fill="#1B5E5A" opacity="0.06" stroke="#1B5E5A" stroke-width="1.4"/>
-              <text x="638" y="46" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="0.04em" fill="#1B5E5A">SUBNET gestion-central (opcional)</text>
+              <!-- Kiosco a kiosco: denegado -->
+              <line x1="100" y1="250" x2="100" y2="316" stroke="#A83B27" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#arrBad)"/>
+              <line x1="100" y1="250" x2="100" y2="156" stroke="#A83B27" stroke-width="1.4" stroke-dasharray="4 3" opacity="0"/>
+              <text x="112" y="280" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#A83B27">NSG-Edge: denegado</text>
+              <text x="112" y="293" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#A83B27">kiosco a kiosco, todo puerto</text>
 
-              <rect x="660" y="120" width="240" height="60" rx="5" fill="none" stroke="#1B5E5A" stroke-width="1.5"/>
-              <text x="780" y="146" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="#1B5E5A">Servidor de actualizaciones</text>
-              <text x="780" y="163" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="#1B5E5A" opacity="0.8">modelo + corpus RAG</text>
+              <!-- Subred gestión central -->
+              <rect x="600" y="40" width="340" height="400" rx="8" fill="#1B5E5A" opacity="0.06" stroke="#1B5E5A" stroke-width="1.4"/>
+              <text x="618" y="64" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="0.04em" fill="#1B5E5A">SUBRED gestión central (opcional)</text>
 
-              <rect x="660" y="220" width="240" height="60" rx="5" fill="none" stroke="#1B5E5A" stroke-width="1.5"/>
-              <text x="780" y="246" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="#1B5E5A">Métricas agregadas</text>
-              <text x="780" y="263" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="#1B5E5A" opacity="0.8">conteos, sin video ni PII</text>
+              <rect x="650" y="110" width="240" height="60" rx="5" fill="none" stroke="#1B5E5A" stroke-width="1.5"/>
+              <text x="770" y="136" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="#1B5E5A">Servidor de actualizaciones</text>
+              <text x="770" y="153" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="#1B5E5A" opacity="0.8">modelo + corpus RAG</text>
 
-              <rect x="660" y="330" width="240" height="60" rx="5" fill="none" stroke="#1B5E5A" stroke-width="1.5" stroke-dasharray="3 3"/>
-              <text x="780" y="356" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="#1B5E5A">VPN administración</text>
-              <text x="780" y="373" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="#1B5E5A" opacity="0.8">único acceso de gestión</text>
+              <rect x="650" y="220" width="240" height="60" rx="5" fill="none" stroke="#1B5E5A" stroke-width="1.5"/>
+              <text x="770" y="246" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="#1B5E5A">Métricas agregadas</text>
+              <text x="770" y="263" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="#1B5E5A" opacity="0.8">conteos, sin video ni datos personales</text>
 
-              <!-- edge A -> central: outbound only, 443 -->
-              <path d="M370,178 C 480,178 560,150 655,150" fill="none" stroke="#256B4C" stroke-width="1.5" marker-end="url(#arrGood)"/>
-              <text x="410" y="140" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#256B4C">saliente 443 · poll semanal</text>
+              <rect x="650" y="340" width="240" height="60" rx="5" fill="none" stroke="#1B5E5A" stroke-width="1.5" stroke-dasharray="3 3"/>
+              <text x="770" y="366" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12.5" font-weight="600" fill="#1B5E5A">VPN de administración</text>
+              <text x="770" y="383" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="10" fill="#1B5E5A" opacity="0.8">único acceso de gestión</text>
 
-              <!-- edge B -> central -->
-              <path d="M370,380 C 480,380 560,240 655,242" fill="none" stroke="#256B4C" stroke-width="1.5" marker-end="url(#arrGood)"/>
-              <text x="410" y="410" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#256B4C">saliente 443 · métricas anónimas</text>
+              <!-- Colegio A hacia central: solo salida por 443 -->
+              <path d="M420,150 C 500,150 560,140 645,140" fill="none" stroke="#256B4C" stroke-width="1.5" marker-end="url(#arrGood)"/>
+              <text x="510" y="128" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#256B4C">salida 443, consulta semanal</text>
 
-              <!-- denied inbound from internet to edge -->
-              <text x="205" y="105" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#A83B27" text-anchor="middle">NSG-Edge: deny todo inbound salvo LAN local · deny todo outbound salvo :443 a gestión-central</text>
-
+              <!-- Colegio B hacia central -->
+              <path d="M420,392 C 500,392 560,250 645,250" fill="none" stroke="#256B4C" stroke-width="1.5" marker-end="url(#arrGood)"/>
+              <text x="510" y="412" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#256B4C">salida 443, métricas agregadas</text>
             </svg>
         </div>
-        <figcaption><strong>Figura 5.</strong> Diseño de red. Cada colegio es un segmento aislado: el grupo de seguridad NSG-Edge deniega el tráfico entrante salvo desde la LAN del propio colegio (puerto 443, interfaz web) y deniega todo el tráfico saliente salvo la consulta periódica al servidor de actualizaciones. El tráfico entre equipos de distintos colegios está denegado. La gestión central solo recibe métricas agregadas, nunca video.</figcaption>
+        <figcaption><strong>Figura 2.</strong> Diseño de red. Cada colegio es un segmento aislado: el grupo de seguridad NSG-Edge deniega el tráfico entrante salvo desde la LAN del propio colegio (puerto 443, interfaz web) y deniega todo el tráfico saliente salvo la consulta periódica al servidor de actualizaciones. El tráfico entre equipos de distintos colegios está denegado. La gestión central solo recibe métricas agregadas, nunca video.</figcaption>
       </figure>
 
       <p class="tcap"><strong>Tabla 4.</strong> Reglas de los grupos de seguridad de red (NSG) que proponemos.</p>
@@ -716,10 +693,10 @@
 
       <p class="tcap"><strong>Tabla 8.</strong> Métricas del modelo YOLOv8n reentrenado sobre el conjunto de validación.</p>
       <div class="table-wrap">
-        <table>
+        <table class="metricas">
           <thead><tr><th>Precisión</th><th>Recall</th><th>mAP50</th><th>mAP50-95</th></tr></thead>
           <tbody>
-            <tr><td class="num">0,959</td><td class="num">0,942</td><td class="num">0,960</td><td class="num">0,919</td></tr>
+            <tr><td>0,959</td><td>0,942</td><td>0,960</td><td>0,919</td></tr>
           </tbody>
         </table>
       </div>
