@@ -1,0 +1,12 @@
+# Instalar con: pip install -r requirements.txt
+# Probado con Python 3.11 en macOS (Apple Silicon). En Windows o Linux con GPU NVIDIA,
+# instalar torch según https://pytorch.org/get-started/locally/ antes del resto.
+flask>=3.0
+requests>=2.31
+numpy>=1.26
+opencv-python>=4.9
+torch>=2.2
+torchvision>=0.17
+ultralytics>=8.2
+easyocr>=1.7
+pypdf>=4.0

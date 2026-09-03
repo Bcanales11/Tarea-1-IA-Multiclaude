@@ -39,8 +39,11 @@ nuestras pruebas los modelos citaron el valor antiguo. Queda pendiente depurar e
    ```
    Genera `resultados_con_sin_rag.csv`: por cada pregunta y modelo, la respuesta sin RAG y
    la respuesta con los fragmentos recuperados inyectados en el prompt.
-6. Completar a mano las columnas `correcto_sin_rag_manual` y `correcto_con_rag_manual` (1/0)
-   comparando contra la normativa.
+6. Calificar las respuestas. Las marcas (1/0) y su justificación están en `calificar_rag.py`
+   y `calificacion_rag.md`; el script las escribe en el CSV y muestra el resumen:
+   ```
+   python3 calificar_rag.py
+   ```
 
 ## Cómo está armado
 

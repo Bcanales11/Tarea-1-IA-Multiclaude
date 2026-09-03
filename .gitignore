@@ -6,7 +6,7 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Fotos (pesan mucho, GB — se juntan/comparten localmente, ver vision/README.md). Las
+# Fotos (pesan varios GB, se juntan y comparten localmente, ver vision/README.md). Las
 # etiquetas (.txt) SÍ se suben, solo las imágenes quedan afuera.
 vision/dataset/images_sin_etiquetar/*
 vision/dataset/etiquetadas/images/

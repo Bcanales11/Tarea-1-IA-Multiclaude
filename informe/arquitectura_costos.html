@@ -683,15 +683,32 @@
         <p>Armamos un corpus con la Ley 20.606 completa, los artículos 110 bis y 120 bis del Decreto 13/2015 y la Guía de Kioscos y Colaciones Saludables del MINSAL, dividido en 75 fragmentos con embeddings de nomic-embed-text. Para cada una de 8 preguntas y cada modelo comparamos la respuesta sin contexto contra la respuesta con los 4 fragmentos más parecidos inyectados en el system prompt, con la instrucción de citar la fuente y de decir que no sabe si el contexto no alcanza.</p>
         <p>Sin RAG, los tres modelos inventaron cifras distintas para el límite de sodio en alimentos sólidos (2.400 mg, 150 mg y 120 mg por 100 g) y una fecha de vigencia incorrecta. Con RAG, los tres entregaron la misma cifra citando la guía (800 mg por 100 g) y los tres reconocieron que el corpus no dice el monto de la multa, en lugar de inventarlo.</p>
         <p>Acá encontramos un problema que no esperábamos: los 800 mg son el valor que la guía menciona en su texto corrido, que corresponde a la primera etapa de la ley (2016). El límite vigente es de 400 mg por 100 g y aparece en las tablas del mismo documento, pero el modelo tomó el fragmento con el valor antiguo. El RAG eliminó la alucinación, pero la respuesta sigue dependiendo de qué fragmento se recupere y de qué tan limpio esté el corpus.</p>
-        <p>El RAG tampoco corrigió todos los errores de razonamiento. En la pregunta sobre si un solo sello basta para prohibir la venta (el artículo 110 bis usa "o" entre los nutrientes), Gemma respondió bien con RAG, mientras que Llama y Qwen recuperaron el fragmento correcto y de todos modos interpretaron mal la condición. Es decir, el modelo que elegimos por velocidad falló la pregunta legal más importante del chat. Por eso, en la aplicación final la regla de un solo sello está fija en el código y no se le pregunta al modelo. Las 24 respuestas completas, con los fragmentos recuperados en cada caso, están en <code>rag/resultados_con_sin_rag.csv</code>; la calificación fila por fila de ese archivo nos quedó pendiente.</p>
+        <p>El RAG tampoco corrigió todos los errores de razonamiento. En la pregunta sobre si un solo sello basta para prohibir la venta (el artículo 110 bis usa "o" entre los nutrientes), Gemma respondió bien con RAG, mientras que Llama y Qwen recuperaron el fragmento correcto y de todos modos interpretaron mal la condición. Es decir, el modelo que elegimos por velocidad falló la pregunta legal más importante del chat. Por eso, en la aplicación final la regla de un solo sello está fija en el código y no se le pregunta al modelo. Calificamos las 24 respuestas una por una contra la normativa del corpus; las marcas y su justificación están en <code>rag/calificar_rag.py</code> y <code>rag/calificacion_rag.md</code>, y el resultado se resume en la Tabla 8.</p>
+      </div>
+
+      <p class="tcap"><strong>Tabla 8.</strong> Respuestas correctas de cada modelo en las 8 preguntas, sin y con RAG. La última columna cuenta como incorrecta la cifra de 800 mg de sodio, porque el límite vigente es 400 mg.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Modelo</th><th class="num">Sin RAG</th><th class="num">Con RAG</th><th class="num">Con RAG, criterio estricto</th></tr></thead>
+          <tbody>
+            <tr><td>gemma-2-2b-it</td><td class="num">1 de 8</td><td class="num">6 de 8</td><td class="num">5 de 8</td></tr>
+            <tr><td>Llama-3.2-3B-Instruct</td><td class="num">1 de 8</td><td class="num">3 de 8</td><td class="num">2 de 8</td></tr>
+            <tr><td>Qwen3-VL-4B</td><td class="num">1 de 8</td><td class="num">4 de 8</td><td class="num">3 de 8</td></tr>
+            <tr><td><strong>Total</strong></td><td class="num"><strong>3 de 24</strong></td><td class="num"><strong>13 de 24</strong></td><td class="num"><strong>10 de 24</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="prose">
+        <p>Con RAG las respuestas correctas subieron de 3 a 13 de 24. La mejora se concentra en las preguntas de cifras y de fuente: el límite de sodio, la institución que elaboró la guía y la multa que el corpus no especifica. En cambio, ningún modelo acertó la fecha de vigencia (27 de junio de 2016, que aparece en el encabezado del decreto pero no estuvo entre los fragmentos recuperados) ni la pregunta sobre personajes infantiles en productos sin sello, donde los tres modelos con RAG aplicaron el artículo 110 bis al revés. Gemma, el modelo más lento, fue el que mejor aprovechó el contexto recuperado.</p>
       </div>
 
       <h3 class="sub" id="s84"><span class="n">8.4</span>Entrenamiento del modelo de visión</h3>
       <div class="prose">
-        <p>Fotografiamos productos reales en supermercados y en nuestras casas y etiquetamos los sellos entre los tres en Roboflow, con una sola clase. Exportamos el dataset en formato YOLOv8, convertimos las anotaciones a cajas rectangulares y reentrenamos YOLOv8n durante 60 épocas con 1.074 imágenes de entrenamiento y 100 de validación. Los resultados sobre el conjunto de validación fueron los de la Tabla 8.</p>
+        <p>Fotografiamos productos reales en supermercados y en nuestras casas y etiquetamos los sellos entre los tres en Roboflow, con una sola clase. Exportamos el dataset en formato YOLOv8, convertimos las anotaciones a cajas rectangulares y reentrenamos YOLOv8n durante 60 épocas con 1.074 imágenes de entrenamiento y 100 de validación. Los resultados sobre el conjunto de validación fueron los de la Tabla 9.</p>
       </div>
 
-      <p class="tcap"><strong>Tabla 8.</strong> Métricas del modelo YOLOv8n reentrenado sobre el conjunto de validación.</p>
+      <p class="tcap"><strong>Tabla 9.</strong> Métricas del modelo YOLOv8n reentrenado sobre el conjunto de validación.</p>
       <div class="table-wrap">
         <table class="metricas">
           <thead><tr><th>Precisión</th><th>Recall</th><th>mAP50</th><th>mAP50-95</th></tr></thead>
@@ -727,13 +744,13 @@
     <section id="estado">
       <div class="section-head"><span class="section-num">10.</span><h2>Estado del proyecto</h2></div>
 
-      <p class="tcap"><strong>Tabla 9.</strong> Estado de cada componente al cierre de este informe.</p>
+      <p class="tcap"><strong>Tabla 10.</strong> Estado de cada componente al cierre de este informe.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Componente</th><th>Estado</th><th class="wrap">Detalle</th></tr></thead>
           <tbody>
             <tr><td>LLM (3 modelos)</td><td><span class="pill good">Listo</span></td><td class="wrap">Comparados con 16 casos, incluido uno de inyección de instrucciones; 16 de 16 en los tres; elegimos Llama-3.2-3B-Instruct por velocidad (sección 8.2)</td></tr>
-            <tr><td>RAG normativo</td><td><span class="pill amber">Parcial</span></td><td class="wrap">Corpus real (Ley 20.606, Decreto 13/2015, Guía MINSAL) y comparación con y sin RAG ejecutada para 8 preguntas y 3 modelos; falta la calificación fila por fila del CSV y depurar el corpus (sección 8.3)</td></tr>
+            <tr><td>RAG normativo</td><td><span class="pill good">Listo</span></td><td class="wrap">Corpus real (Ley 20.606, Decreto 13/2015, Guía MINSAL); comparación con y sin RAG calificada para 8 preguntas y 3 modelos: de 3 a 13 respuestas correctas de 24 (sección 8.3)</td></tr>
             <tr><td>Dataset de fotos</td><td><span class="pill good">Listo</span></td><td class="wrap">Etiquetado entre los tres en Roboflow, 1.074 imágenes de entrenamiento y 100 de validación, una sola clase "sello"</td></tr>
             <tr><td>Pipeline de visión</td><td><span class="pill good">Listo</span></td><td class="wrap">YOLOv8n reentrenado, agrupamiento por cercanía, OCR y regla de negocio; mAP50 de 0,96 (sección 8.4)</td></tr>
             <tr><td>Interfaz web</td><td><span class="pill good">Listo</span></td><td class="wrap">Escaneo por foto, cámara continua, chat con RAG y resumen diario</td></tr>
@@ -749,7 +766,7 @@
       <div class="section-head"><span class="section-num">11.</span><h2>Conclusiones</h2></div>
       <div class="prose">
         <p>El prototipo cumple lo que nos propusimos: el kiosquero pone un producto frente a la cámara y en menos de un segundo recibe un veredicto basado en la normativa, con registro y con una explicación en lenguaje natural. Separar la tarea determinística (visión y regla) de la conversacional (modelo de lenguaje y RAG) fue la decisión más importante del proyecto, porque comprobamos que los modelos de lenguaje pequeños que caben en 8 GB todavía se equivocan al interpretar una condición legal, incluso con el fragmento correcto a la vista.</p>
-        <p>La comparación con y sin RAG nos confirmó que el RAG elimina las cifras inventadas y permite citar la fuente, pero también nos mostró que la calidad depende del corpus: el modelo tomó el valor de sodio que aparecía en el texto de la guía y no el vigente. Depurar el corpus es la mejora más directa que identificamos.</p>
+        <p>La comparación con y sin RAG nos confirmó que el RAG elimina las cifras inventadas y permite citar la fuente: las respuestas correctas pasaron de 3 a 13 de 24. Pero también nos mostró que la calidad depende del corpus: el modelo tomó el valor de sodio que aparecía en el texto de la guía y no el vigente. Depurar el corpus es la mejora más directa que identificamos.</p>
         <p>Sobre la elección de IA local, la justificación más sólida está en la parte de visión: video de menores, respuesta inmediata y colegios sin internet estable. Para el chat, la justificación es más débil y depende de la conectividad; si fuera confiable, un servicio en la nube podría dar mejores respuestas. Nos parece importante decirlo así en vez de forzar el argumento.</p>
       </div>
     </section>
@@ -760,7 +777,7 @@
       <div class="prose">
         <ul>
           <li>Mostrar de forma explícita el estado "apto" en la interfaz cuando pasan algunos segundos sin detectar sellos, y registrar esos casos en el historial para que el resumen diario tenga sentido.</li>
-          <li>Depurar el corpus del RAG para dejar solo los límites nutricionales vigentes de la tercera etapa de la ley, y completar la calificación fila por fila del CSV de comparación.</li>
+          <li>Depurar el corpus del RAG para dejar solo los límites nutricionales vigentes de la tercera etapa de la ley, y mejorar la recuperación para preguntas de fechas, que hoy no encuentran el fragmento correcto.</li>
           <li>Ampliar los casos de prueba de los modelos de lenguaje con preguntas más difíciles, para que la comparación distinga mejor entre ellos y la elección no dependa solo de la velocidad.</li>
           <li>Probar el despliegue en un Jetson Orin Nano para validar la opción de hardware más económica de la Tabla 5.</li>
           <li>Grabar el video de presentación con el prototipo funcionando.</li>
