@@ -6,33 +6,25 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Fotos y dataset de visión (pesan mucho; se juntan localmente, ver vision/README.md)
+# Fotos (pesan mucho, GB — se juntan/comparten localmente, ver vision/README.md). Las
+# etiquetas (.txt) SÍ se suben, solo las imágenes quedan afuera.
 vision/dataset/images_sin_etiquetar/*
-vision/dataset/etiquetadas/
+vision/dataset/etiquetadas/images/
 vision/dataset/images/train/*
 vision/dataset/images/val/*
-vision/dataset/labels/train/*
-vision/dataset/labels/val/*
-
-# Entrenamientos de YOLO (pesos + logs, se regeneran con entrenar_yolo.py)
-vision/modelos/kiosco_saludable/
 
 # Fotos crudas del Jumbo (rar suelto en la raíz) y lotes armados para repartir por zip
 /Fotos/
 vision/dataset/lotes_para_repartir/
 
-# Export de Roboflow (dataset ya etiquetado, pesa mucho; se procesa con
-# vision/importar_roboflow.py y el resultado queda en vision/dataset/, que también se ignora)
+# Export de Roboflow (son las fotos + labels sin convertir; ya procesado y subido vía
+# vision/importar_roboflow.py, el resultado queda en vision/dataset/images y labels)
 /*.v*i.yolov8/
 /*.v*i.yolov8.zip
 /*.v*i.yolov8.tar
 
-# Cache que genera Ultralytics al entrenar (se regenera solo)
+# Cache que genera Ultralytics al entrenar (binario, se regenera solo)
 vision/dataset/labels/*.cache
-
-# dataset.yaml trae una ruta absoluta local (path: D:\...) — se regenera con
-# importar_roboflow.py o dividir_dataset.py, no debe subirse tal cual
-vision/dataset/dataset.yaml
 
 # Entorno virtual de Python (cada uno arma el suyo, ver vision/README.md)
 vision/.venv/

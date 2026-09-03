@@ -58,8 +58,8 @@ def main():
     print(f"Split hecho: {contador['train']} train / {contador['val']} val")
 
     nombres_yaml = "\n".join(f"  {i}: {nombre}" for i, nombre in enumerate(CLASES))
+    # Sin "path:" absoluto a propósito: así el archivo sirve igual en cualquier máquina.
     yaml_contenido = f"""# Generado por dividir_dataset.py
-path: {CARPETA_DATASET.resolve()}
 train: images/train
 val: images/val
 names:

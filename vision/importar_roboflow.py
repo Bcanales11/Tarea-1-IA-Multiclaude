@@ -108,8 +108,9 @@ def main():
     print(f"Copiadas y convertidas: {n_train} imágenes de train, {n_val} de val.")
 
     nombres_yaml = "\n".join(f"  {i}: {nombre}" for i, nombre in enumerate(CLASES))
+    # Sin "path:" absoluto a propósito: así el archivo sirve igual en cualquier máquina.
+    # Ultralytics resuelve train/val como relativos a la carpeta de este mismo archivo.
     yaml_contenido = f"""# Generado por importar_roboflow.py
-path: {CARPETA_DATASET.resolve()}
 train: images/train
 val: images/val
 names:
