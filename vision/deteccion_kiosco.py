@@ -1,7 +1,6 @@
 """
-App principal del pipeline de visión: detección de producto -> detección de sellos dentro
-de ese bounding box -> OCR de cada sello -> clasificación por nutriente -> regla de negocio
-(¿se puede vender en el kiosco escolar?). 100% local (YOLO propio + EasyOCR).
+Pipeline de visión: detección de sellos -> agrupamiento en productos -> OCR de cada sello ->
+clasificación por nutriente -> regla de negocio. Todo local (YOLO propio + EasyOCR).
 
 Uso:
     python3 deteccion_kiosco.py                  # cámara en vivo (webcam)
@@ -48,14 +47,9 @@ def leer_texto_en_caja(frame, caja):
 
 
 def analizar_frame(modelo, frame, confianza=UMBRAL_CONFIANZA_DEFAULT):
-    """Corre la detección + lógica adicional sobre un frame y devuelve una lista de
-    productos evaluados: [{"caja": (x1,y1,x2,y2), "apto": bool, "nutrientes": [...],
-    "motivo": str, "sellos_cajas": [...]}, ...]. Reutilizable desde otros scripts
-    (por ejemplo la futura interfaz web que una visión + LLM).
-
-    No hay una clase "producto" entrenada (ver vision_utils.py): los sellos detectados se
-    agrupan por cercanía relativa a su propio tamaño (`agrupar_sellos_en_productos`), y
-    cada grupo se trata como un producto distinto."""
+    """Corre la detección y la lógica adicional sobre un frame. Devuelve una lista de
+    productos evaluados: [{"caja", "apto", "nutrientes", "motivo", "sellos_cajas"}, ...].
+    Los sellos se agrupan por cercanía (ver vision_utils.py) y cada grupo es un producto."""
     resultado = modelo.predict(frame, conf=confianza, verbose=False)[0]
     sellos = resultado.boxes.xyxy.tolist()
 
@@ -97,10 +91,7 @@ def dibujar_resultado(frame, productos_evaluados):
     return frame
 
 
-INTERVALO_ANALISIS = 5  # analiza (YOLO + OCR) 1 de cada N frames; el resto solo redibuja
-                         # el último resultado. El OCR es lo más pesado (se corre 1 vez por
-                         # sello detectado), y el producto no cambia 30 veces por segundo, así
-                         # que no hace falta analizar cada frame para que se vea fluido.
+INTERVALO_ANALISIS = 5  # analiza (YOLO + OCR) 1 de cada N frames; el resto redibuja el último resultado
 
 
 def correr_camara(modelo, indice_camara=0, intervalo_analisis=INTERVALO_ANALISIS):

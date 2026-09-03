@@ -12,9 +12,7 @@ import requests
 
 LM_STUDIO_EMBEDDINGS_URL = "http://localhost:1234/v1/embeddings"
 
-# Modelo de embeddings que debe estar cargado en LM Studio (Search > modelos de embedding,
-# por ejemplo "text-embedding-nomic-embed-text-v1.5"). Ajusta este nombre al que aparezca
-# en tu LM Studio (pestaña Developer > "Local Server").
+# Modelo de embeddings cargado en LM Studio; ajustar al nombre que aparezca en Developer > Local Server.
 EMBED_MODEL = "text-embedding-nomic-embed-text-v1.5"
 
 CARPETA_RAG = Path(__file__).parent

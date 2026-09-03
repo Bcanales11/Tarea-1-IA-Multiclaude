@@ -1,12 +1,6 @@
 """
-Entrena (fine-tuning) un YOLOv8 nano sobre el dataset propio de sellos "ALTO EN".
-
-No es aplicar un modelo pre-entrenado tal cual: se parte de los pesos base de YOLOv8
-(entrenados en COCO, que no conoce el octágono "sello ALTO EN") y se reentrena
-específicamente con la clase "sello" de dataset/etiquetadas. La caja de "producto" no se
-entrena: se deriva agrupando los sellos detectados por cercanía (ver vision_utils.py).
-
-Usa el GPU de Apple Silicon (Metal/MPS) si está disponible; si no, cae a CPU automáticamente.
+Reentrena (fine-tuning) YOLOv8 nano sobre nuestro dataset de sellos "ALTO EN", partiendo de
+los pesos base de COCO. Usa el GPU de Apple Silicon (MPS) si está disponible; si no, CPU.
 
 Uso:
     python3 entrenar_yolo.py [--epocas 60] [--imgsz 640] [--modelo-base yolov8n.pt]

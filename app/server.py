@@ -1,13 +1,11 @@
 """
-Backend Flask que une visión (YOLO + OCR + regla de negocio) con el LLM local (LM Studio) y
-el RAG normativo, para la interfaz final del Kiosco Escolar Saludable. Corre 100% local: la
-única llamada de red es a LM Studio en localhost:1234.
+Backend Flask del Kiosco Escolar Saludable: une visión (YOLO + OCR + regla de negocio) con el
+LLM local (LM Studio) y el RAG normativo. La única llamada de red es a LM Studio en localhost.
 
 Uso:
     python3 server.py
-Luego abre http://localhost:5000 en el navegador. Requiere LM Studio corriendo con un modelo
-de chat y uno de embeddings cargados (ver rag/README.md) para el chat y las explicaciones del
-LLM — el escaneo de visión funciona igual sin LM Studio, solo no habrá explicación/chat.
+Luego abrir http://localhost:5050. Para el chat y las explicaciones hace falta LM Studio con
+un modelo de chat y uno de embeddings cargados (ver rag/README.md); el escaneo funciona sin él.
 """
 import sys
 import threading
@@ -31,15 +29,12 @@ from rag_utils import formatear_contexto, recuperar_contexto  # noqa: E402
 import historial  # noqa: E402
 
 LM_STUDIO_CHAT_URL = "http://localhost:1234/v1/chat/completions"
-# Confirmado: los 3 modelos acertaron 100% de los 16 casos de resultados_llms_v2.csv
-# (correcto_manual calculado objetivamente contra los sellos de cada caso, ver
-# calificar_llms.py) - con calidad empatada, Llama gana por ser el más rápido (~35-40%
-# más que Qwen3-VL y Gemma-2-2B). Detalle en informe/arquitectura_costos.html §07.
+# Los 3 modelos acertaron los 16 casos (ver calificar_llms.py); elegimos Llama por ser el más rápido.
 MODELO_LLM = "llama-3.2-3b-instruct"
 
 SYSTEM_PROMPT_EXPLICACION = """Eres un asistente para kioscos escolares saludables en Chile.
 El veredicto de un producto YA fue decidido por un sistema determinístico (visión + regla del
-art. 110 bis del Decreto 13/2015) — no es tu trabajo decidir ni cuestionar el veredicto, solo
+art. 110 bis del Decreto 13/2015). No es tu trabajo decidir ni cuestionar el veredicto, solo
 explicarlo. Se te entrega el motivo ya calculado.
 Redacta una explicación breve y cálida (máximo 3 frases) para el kiosquero, basada
 ÚNICAMENTE en el motivo entregado. Si aplica, sugiere brevemente el TIPO de alternativa más
@@ -171,11 +166,9 @@ def _actualizar_estado_continuo(productos_evaluados):
 
 
 RESOLUCION_STREAM = (640, 480)  # menos píxeles = captura, análisis y envío más rápidos
-FRAMES_A_DESCARTAR = 2  # por cada frame que se envía, descarta 2 sin decodificar (cap.grab())
-                         # -> baja el framerate real servido a ~1/3 de lo que da la cámara,
-                         # sin pagar el costo de decodificar los frames que se descartan
-INTERVALO_ANALISIS = 4  # de los frames que SÍ se envían, analiza (YOLO+OCR) 1 de cada 4
-CALIDAD_JPEG = 70  # 0-100; baja calidad = codifica más rápido y pesa menos por la red
+FRAMES_A_DESCARTAR = 2  # por cada frame enviado se descartan 2 con cap.grab(), sin decodificar
+INTERVALO_ANALISIS = 4  # de los frames enviados, se analiza (YOLO+OCR) 1 de cada 4
+CALIDAD_JPEG = 70
 
 
 def _generar_frames_mjpeg():

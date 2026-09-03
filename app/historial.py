@@ -1,7 +1,5 @@
-"""Historial local de escaneos (SQLite embebido, ver informe/arquitectura_costos.html §02).
-Guarda cada veredicto para poder generar el resumen del día (ver api_resumen en server.py) —
-le da al LLM una segunda utilidad real: redactar en lenguaje natural sobre datos propios de la
-app, no solo responder preguntas sobre la ley."""
+"""Historial local de escaneos en SQLite. Guarda cada veredicto para generar el resumen del
+día (api_resumen en server.py)."""
 import sqlite3
 from datetime import date, datetime
 from pathlib import Path

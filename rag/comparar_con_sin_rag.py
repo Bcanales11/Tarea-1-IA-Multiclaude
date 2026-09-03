@@ -49,8 +49,7 @@ CONTEXTO RECUPERADO:
 {contexto}
 """
 
-# Preguntas pensadas para que se note la diferencia entre "responder de memoria" (con riesgo
-# de alucinar cifras/artículos) y "responder citando la normativa recuperada".
+# Preguntas donde se note la diferencia entre responder de memoria y citar la normativa.
 PREGUNTAS = [
     "¿Cuál es el límite de sodio permitido en un alimento SÓLIDO para que no deba llevar el "
     "sello 'ALTO EN SODIO'?",

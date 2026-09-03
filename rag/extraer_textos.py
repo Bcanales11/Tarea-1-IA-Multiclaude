@@ -42,11 +42,8 @@ def extraer_pdf(ruta_pdf, ruta_txt_salida, titulo):
 
 
 if __name__ == "__main__":
-    # Nota: la copia consolidada completa del RSA (decreto13.xml, ~24k líneas) se descartó del
-    # corpus final porque el endpoint obtxml de BCN incrusta bloques binarios (adjuntos en base64)
-    # ajenos al articulado y porque las tablas de límites numéricos no vienen como texto plano ahí.
-    # Se usa en su lugar el propio texto del decreto (más acotado) y la guía MINSAL, que sí trae
-    # los valores de las tablas.
+    # decreto13.xml (copia consolidada del RSA vía BCN) se descartó: trae adjuntos en base64 y
+    # no tiene las tablas de límites en texto plano. Se usa el decreto en PDF y la guía MINSAL.
     limpiar_xml_leychile(
         CARPETA_RAW / "ley_20606.xml",
         CARPETA_CORPUS / "01_ley_20606.txt",

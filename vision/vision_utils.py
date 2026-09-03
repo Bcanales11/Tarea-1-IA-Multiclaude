@@ -1,17 +1,11 @@
 """
-Lógica compartida del pipeline de visión: constantes de rutas, el agrupamiento de sellos
-en "productos" (clustering geométrico por distancia relativa al tamaño del sello, ver
-`agrupar_sellos_en_productos`), la clasificación del texto OCR de cada sello en uno de los
-4 nutrientes críticos, y la regla de negocio de la normativa (un solo sello ya basta para
-que el producto no sea apto para venta escolar - ver rag/resultados_con_sin_rag.csv, art.
-110 bis del Decreto 13/2015: "energía, sodio, azúcares O grasa saturada").
+Lógica compartida del pipeline de visión: rutas, agrupamiento de sellos en "productos" por
+cercanía, clasificación del texto OCR en uno de los 4 nutrientes y regla de negocio (un solo
+sello basta para que el producto no sea apto, art. 110 bis del Decreto 13/2015).
 
-Por qué no hay una clase "producto" entrenada: a diferencia del sello (forma y contraste
-fijos, fácil de generalizar con pocas fotos), cada producto tiene forma, color y textura
-distintos entre sí — entrenar una clase "producto" genérica con ~400 fotos generalizaría
-mal. En su lugar, se agrupan los sellos ya detectados por cercanía relativa: sellos muy
-cercanos entre sí (según su propio tamaño) se asumen del mismo producto; sellos lejanos se
-asumen de productos distintos.
+No hay clase "producto" entrenada: cada producto tiene forma, color y textura distintos y con
+nuestras fotos habría generalizado mal. En su lugar se agrupan los sellos detectados por
+cercanía relativa a su tamaño.
 """
 import unicodedata
 import re
@@ -28,15 +22,11 @@ ID_SELLO = 0
 
 UMBRAL_CONFIANZA_DEFAULT = 0.35
 
-# Dos sellos se consideran del mismo producto si la distancia entre sus bordes más
-# cercanos es menor a esta cantidad de "anchos de sello" (promedio de los dos anchos
-# involucrados). Relativo al tamaño detectado, no a píxeles fijos, para que funcione
-# igual de bien sin importar qué tan cerca/lejos esté la cámara del producto.
+# Dos sellos son del mismo producto si la distancia entre sus bordes es menor a esta cantidad
+# de "anchos de sello" (relativo al tamaño detectado, no a píxeles fijos).
 FACTOR_UMBRAL_CLUSTERING = 2.5
 
-# Margen extra (fracción del tamaño del grupo de sellos) que se agrega alrededor de la
-# caja de producto derivada, ya que el envase real siempre es más grande que el área que
-# ocupan sus sellos.
+# Margen extra (fracción del tamaño del grupo) alrededor de la caja de producto derivada.
 MARGEN_CAJA_PRODUCTO = 0.6
 
 NUTRIENTES_KEYWORDS = {
@@ -133,16 +123,11 @@ def agrupar_sellos_en_productos(cajas_sellos, factor_umbral=FACTOR_UMBRAL_CLUSTE
 
 
 def evaluar_regla_negocio(nutrientes_detectados):
-    """Regla de negocio según art. 110 bis del Decreto 13/2015: basta UN sello 'ALTO EN'
-    (cualquiera de los 4 nutrientes) para que el producto no pueda venderse en el kiosco
-    escolar. No es una suposición: se verificó explícitamente contra el RAG (ver
-    rag/resultados_con_sin_rag.csv) que la condición del artículo es 'o', no 'y'.
+    """Regla del art. 110 bis del Decreto 13/2015: basta UN sello 'ALTO EN' para que el
+    producto no pueda venderse en el kiosco escolar.
 
-    Importante: la decisión apto/no-apto depende de CUÁNTOS sellos detectó YOLO, no de si
-    el OCR logró leer con éxito cuál nutriente indica cada uno. Un sello detectado pero con
-    texto ilegible (foto borrosa, ángulo, resolución de cámara) igual cuenta como sello real
-    — lo contrario dejaría pasar productos con sellos que el OCR simplemente no pudo leer,
-    que es el peor tipo de error posible acá (falso "apto")."""
+    La decisión depende de cuántos sellos detectó YOLO, no de si el OCR pudo leerlos: un sello
+    con texto ilegible igual cuenta, para no dejar pasar un producto como apto por error."""
     apto = len(nutrientes_detectados) == 0
     nutrientes_unicos = sorted(set(nutrientes_detectados) - {"DESCONOCIDO"})
 

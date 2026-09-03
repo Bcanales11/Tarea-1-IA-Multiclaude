@@ -1,13 +1,7 @@
 """
-Etiquetador manual mínimo (sin dependencias externas de anotación tipo labelImg/Roboflow):
-usa cv2.selectROIs para dibujar cajas con el mouse sobre cada foto y guarda las
-anotaciones en formato YOLO.
-
-Flujo por cada foto en dataset/images_sin_etiquetar/:
-  1. Se abre una ventana pidiendo dibujar la(s) caja(s) de la clase "sello"
-     (cada octágono negro "ALTO EN..." visible). No se etiqueta "producto": esa caja se
-     deriva después agrupando los sellos por cercanía (ver vision_utils.py).
-  2. Se guarda la imagen + un .txt en formato YOLO en dataset/etiquetadas/.
+Etiquetador manual con OpenCV: usa cv2.selectROIs para dibujar cajas con el mouse sobre cada
+foto de dataset/images_sin_etiquetar/ y guarda imagen + .txt en formato YOLO en
+dataset/etiquetadas/. Solo se etiqueta la clase "sello".
 
 Controles de cv2.selectROIs:
   - Arrastra con el mouse para dibujar una caja, ENTER o ESPACIO para confirmarla y

@@ -3,16 +3,12 @@ Toma un dataset exportado desde Roboflow en formato YOLOv8 (carpeta con train/va
 cada una con images/ y labels/, más un data.yaml) y lo deja listo en vision/dataset/ para
 entrenar con entrenar_yolo.py.
 
-Hace dos cosas que el export crudo de Roboflow no entrega directamente:
-1. Convierte labels de polígono (segmentación, "clase x1 y1 x2 y2 x3 y3 ...") a cajas
-   rectangulares YOLO ("clase cx cy w h") — pasa si el proyecto de Roboflow quedó
-   configurado como Instance Segmentation en vez de Object Detection, o si alguien
-   etiquetó con la herramienta de polígono. Si un label ya viene como caja (5 valores),
-   se deja igual.
-2. Junta "valid" -> "val" (nombre que usa este proyecto) y copia todo a
-   vision/dataset/images/{train,val} y vision/dataset/labels/{train,val}, generando
-   dataset.yaml con solo la clase "sello" (ver vision_utils.py sobre por qué no hay clase
-   "producto" entrenada).
+Hace dos cosas:
+1. Convierte labels de polígono ("clase x1 y1 x2 y2 ...") a cajas YOLO ("clase cx cy w h").
+   Nuestro proyecto de Roboflow quedó como segmentación, por eso el export venía en polígonos.
+   Si un label ya viene como caja, se deja igual.
+2. Renombra "valid" a "val", copia todo a vision/dataset/ y genera dataset.yaml con la clase
+   "sello".
 
 Uso:
     python3 importar_roboflow.py "../Proyecto 1 IA multicloud.v1i.yolov8"
