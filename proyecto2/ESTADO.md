@@ -49,7 +49,8 @@
 
 - 9 nov (Max): **nuevo 4.5, nombres de secretos en Key Vault** (`azure-openai-api-key`, `foundry-search-api-key`, `registro-api-key`, `gemini-api-key`). Pendiente que Benjamín lo confirme o proponga otros nombres.
 
-- 9 nov (Max): **4.3, `NO_APTO` puede venir con `sellos` vacía** (sello visto por la cámara pero ilegible). No cambia ningún campo, solo la validación. Pendiente que Benjamín lo confirme.
+- 9 nov (Max): **4.3, `NO_APTO` puede venir con `sellos` vacía** (sello visto por la cámara pero ilegible). No cambia ningún campo, solo la validación. → 9 nov: **confirmado por Benjamín**. Regla de la API: `veredicto` se guarda tal cual (solo APTO o NO_APTO, si no 422); `sellos` puede ir vacía con NO_APTO y, si trae valores, deben ser los 4 válidos; nunca se recalcula el veredicto.
+  - Pregunta de Benjamín, "¿y si llega **APTO con sellos**?". Respuesta de Max: **rechazar con 422 y dejar un warning en los logs**. Los agentes nunca lo envían, porque `guardar_chequeo` calcula el veredicto con la regla y con sellos siempre da NO_APTO; si llega, es un error o una llamada manipulada. Guardarlo dejaría en la auditoría un producto con sello marcado como apto, que es justo el error grave. El warning sirve de evidencia de observabilidad.
 
 ## Decisiones tomadas
 
