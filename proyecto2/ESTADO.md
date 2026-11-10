@@ -22,7 +22,7 @@
 | Modelo desplegado en Foundry | hecho (Benjamín) | 9 nov: deployment `gpt-5.4-mini` (Estándar global, East US), API v1. Conectado a los agentes |
 | Corridas de evaluación (2 o 3) | por hacer (Fernanda) | necesita las KB listas |
 | Informe PDF del 10 nov | por hacer (Fernanda) | necesita capturas de Benjamín |
-| Agentes ADK en Cloud Run | en curso (Max) | 9 nov: 6 agentes en 3 niveles, logs, reintento/respaldo y servidor en `agentes/`. **9 nov, noche: funcionando con `gpt-5.4-mini` de Foundry + KB de Foundry**, Gemini como respaldo (probado: límites por etapa, venta de producto, registro de cámara). 9 nov, noche: **app del kiosco conectada** (`app_kiosco/`, con la pausa del modo continuo; probada con fotos, chat y resumen, y con respaldo local si los agentes no responden). Falta: desplegar en Cloud Run |
+| Agentes ADK en Cloud Run | en curso (Max) | 9 nov: 6 agentes en 3 niveles, logs, reintento/respaldo y servidor en `agentes/`. **9 nov, noche: funcionando con `gpt-5.4-mini` de Foundry + KB de Foundry**, Gemini como respaldo (probado: límites por etapa, venta de producto, registro de cámara). 9 nov, noche: **app del kiosco conectada** (`app_kiosco/`, con la pausa del modo continuo; probada con fotos, chat y resumen, y con respaldo local si los agentes no responden). **10 nov: desplegado en Cloud Run** (`kiosco-g19-agentes`, `southamerica-west1`, privado + x-api-key, secretos en Secret Manager de Google; probado). Falta: abrir el acceso para la app del kiosco, API de registro de Benjamín y Key Vault |
 | API de registro + BD | por hacer (Benjamín) | para el 16 nov |
 
 ## Buzón de Benjamín
