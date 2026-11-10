@@ -20,8 +20,8 @@
 | Borrador de 70 preguntas | hecho (Max) | `evaluacion/preguntas_v1.jsonl` y `.csv` |
 | KB en Azure Foundry | hecho (Benjamín) | 9 nov: `kb-normativa` (3 .txt) y `kb-catalogo` (44 .md) activas en `kiosco-g19-search`. Max las probó desde los agentes (api-version `2026-05-01-preview`) |
 | Modelo desplegado en Foundry | hecho (Benjamín) | 9 nov: deployment `gpt-5.4-mini` (Estándar global, East US), API v1. Conectado a los agentes |
-| Corridas de evaluación (2 o 3) | por hacer (Fernanda) | necesita las KB listas |
-| Informe PDF del 10 nov | por hacer (Fernanda) | necesita capturas de Benjamín |
+| Corridas de evaluación (2 o 3) | Hecho (Fernanda) | necesita las KB listas |
+| Informe PDF del 10 nov | Hecho (Fernanda) | necesita capturas de Benjamín |
 | Agentes ADK en Cloud Run | casi listo (Max) | 9 nov: 6 agentes en 3 niveles, logs, reintento/respaldo y servidor en `agentes/`. **9 nov, noche: funcionando con `gpt-5.4-mini` de Foundry + KB de Foundry**, Gemini como respaldo (probado: límites por etapa, venta de producto, registro de cámara). 9 nov, noche: **app del kiosco conectada** (`app_kiosco/`, con la pausa del modo continuo; probada con fotos, chat y resumen, y con respaldo local si los agentes no responden). **10 nov: desplegado en Cloud Run** (`kiosco-g19-agentes`, `southamerica-west1`, privado + x-api-key, secretos en Secret Manager de Google; probado). 10 nov: búsqueda híbrida del catálogo (corrige C-011 y A-005), herramientas en hilos (10 consultas simultáneas: 13,8 s de media), 28 tests y 4 escenarios de falla con logs en `agentes/pruebas/`, y costos con números. Falta: abrir el acceso a Cloud Run para la app del kiosco (hoy privado), API de registro de Benjamín y Key Vault |
 | API de registro + BD | por hacer (Benjamín) | para el 16 nov |
 
