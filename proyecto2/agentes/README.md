@@ -65,6 +65,13 @@ python probar.py --lote ../evaluacion/preguntas_v1.jsonl --n 5
 uvicorn servidor:app --port 8080  # servidor local; GET http://localhost:8080/salud
 ```
 
+## Conexión a Azure (probada el 9 nov)
+
+- **Modelo:** `MODELO_PRINCIPAL=azure/gpt-5.4-mini`, `AZURE_API_BASE=https://kiosco-g19-foundry.openai.azure.com`, `AZURE_API_VERSION=v1` (API v1 de Azure OpenAI; LiteLLM la usa con `api_version=v1`). Los 6 agentes usan este modelo (`MODELO_ESPECIALISTAS` vacío); Gemini queda de respaldo.
+- **Knowledge bases:** `KB_BACKEND=foundry`, `FOUNDRY_SEARCH_ENDPOINT=https://kiosco-g19-search.search.windows.net`, `FOUNDRY_KB_API_VERSION=2026-05-01-preview`. Basta la **query key** (solo lectura). La respuesta trae fragmentos `{ref_id, content}` y `references` con `docName` y `rerankerScore`: se entregan al agente los mejores, ordenados y con su fuente.
+- Foundry agrupa varios productos del catálogo por fragmento, por eso el filtro de alternativas sin sello se aplica producto por producto.
+- Las claves de 84 caracteres son de Azure OpenAI y las de 52 son de Azure AI Search: si dan "invalid subscription key", revisar que no estén cruzadas.
+
 ## Despliegue en Cloud Run (pendiente: proyecto de Google Cloud con facturación)
 
 ```bash
