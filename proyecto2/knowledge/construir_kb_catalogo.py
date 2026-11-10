@@ -1,12 +1,16 @@
 """Arma la knowledge base `kb-catalogo` a partir del catálogo scrapeado de Jumbo.cl.
 
 Entrada:  fuentes/metadata_jumbo.csv  (scraper del Proyecto 1, 1.562 productos)
-Salida:   kb-catalogo/*.md            (un archivo por subcategoría, listo para subir a Foundry)
+Salida:   kb-catalogo/*.md            (archivos por subcategoría de hasta 40 productos, listos para Foundry)
 
 Por qué Markdown agrupado por subcategoría y no el CSV tal cual:
 - Foundry trocea los documentos para indexarlos; un CSV de 1.562 filas queda en trozos
   sin contexto (sin encabezados), y el agente no sabe a qué columna corresponde cada valor.
 - Con una línea autoexplicativa por producto, cada trozo recuperado se entiende solo.
+- Cada producto va en su propio párrafo (línea en blanco entre productos) y cada archivo
+  tiene como máximo 40 productos. Sin eso, Foundry toma la lista entera como un solo bloque
+  y los archivos grandes superan el límite de 8.000 tokens del modelo de embeddings
+  (error "Text at index 0 contains 8227 tokens"). Probado al cargar `kb-catalogo` el 9 nov.
 - Agrupar por subcategoría permite que el Sub-agente de Alternativas encuentre productos
   "de la misma familia" sin sello.
 
@@ -45,6 +49,9 @@ NOMBRES = {
 RE_UNIDAD = re.compile(r"(\d+(?:[.,]\d+)?)\s*(kg|g|gr|grs|ml|cc|l|lt|lts)\b", re.IGNORECASE)
 LIQUIDOS = {"ml", "cc", "l", "lt", "lts"}
 
+# Máximo de productos por archivo, para que ningún bloque supere 8.000 tokens al indexar.
+MAX_POR_ARCHIVO = 40
+
 
 def legible(slug: str) -> str:
     return NOMBRES.get(slug, slug.replace("-", " ").capitalize())
@@ -77,19 +84,20 @@ def main() -> None:
         viejo.unlink()
 
     total = 0
+    archivos = 0
     for clave, productos in sorted(por_subcategoria.items()):
         categoria, subcategoria = (clave.split("/") + [""])[:2]
         titulo = f"{legible(categoria)} > {legible(subcategoria)}"
         con_sello = sum(1 for p in productos if p["seal_heuristic"] == "True")
 
-        lineas = [
-            f"# Catálogo de productos: {titulo}",
-            "",
+        encabezado = [
             "Fuente: catálogo público de Jumbo.cl (scraping académico, agosto 2026).",
+            "",
             "Campo 'Sello ALTO EN': resultado de una detección automática sobre la foto del producto, "
             "no verificado a mano. 'Probable' significa que la foto muestra al menos un octágono negro "
             "tipo sello; no indica qué nutriente ni cuántos sellos. El veredicto definitivo lo da la "
             "cámara del kiosco (YOLO + OCR).",
+            "",
             "Regla del kiosco escolar: basta UN sello 'ALTO EN' para que el producto no se pueda vender "
             "dentro del colegio (Decreto 13/2015, art. 110 bis).",
             "",
@@ -97,23 +105,32 @@ def main() -> None:
             f"{len(productos) - con_sello} sin sello detectado.",
             "",
         ]
+        items = []
         for p in sorted(productos, key=lambda x: x["name"]):
             neto, tipo = tipo_alimento(p["name"])
             sello = "probable (no se puede vender en el colegio)" if p["seal_heuristic"] == "True" \
                 else "no detectado (candidato a venta, verificar etiqueta)"
-            lineas.append(
-                f"- **{p['name'].strip()}** | SKU {p['sku_id']} | Categoría: {titulo} "
+            items.append(
+                f"**{p['name'].strip()}** | SKU {p['sku_id']} | Categoría: {titulo} "
                 f"({p['category_path']}) | Contenido neto: {neto} | Tipo: {tipo} | "
                 f"Sello ALTO EN: {sello}"
             )
-        lineas.append("")
 
-        archivo = SALIDA / f"catalogo_{categoria}__{subcategoria}.md"
-        archivo.write_text("\n".join(lineas), encoding="utf-8")
+        partes_lista = [items[i:i + MAX_POR_ARCHIVO] for i in range(0, len(items), MAX_POR_ARCHIVO)]
+        for n, parte in enumerate(partes_lista, 1):
+            varias = len(partes_lista) > 1
+            cabeza = f"# Catálogo de productos: {titulo}" + (f" (parte {n} de {len(partes_lista)})" if varias else "")
+            lineas = [cabeza, ""] + encabezado
+            for item in parte:
+                lineas += [item, ""]  # línea en blanco: cada producto es su propio párrafo
+            sufijo = f"__parte{n}" if varias else ""
+            archivo = SALIDA / f"catalogo_{categoria}__{subcategoria}{sufijo}.md"
+            archivo.write_text("\n".join(lineas), encoding="utf-8")
+            archivos += 1
         total += len(productos)
-        print(f"{archivo.name}: {len(productos)} productos ({con_sello} con sello probable)")
+        print(f"{titulo}: {len(productos)} productos en {len(partes_lista)} archivo(s) ({con_sello} con sello probable)")
 
-    print(f"Total: {total} productos en {len(por_subcategoria)} archivos -> {SALIDA}")
+    print(f"Total: {total} productos en {archivos} archivos -> {SALIDA}")
 
 
 if __name__ == "__main__":

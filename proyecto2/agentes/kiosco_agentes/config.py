@@ -31,8 +31,12 @@ def _env(nombre: str, defecto: str = "") -> str:
 # --- Modelos -----------------------------------------------------------------
 # Formato LiteLLM: "azure/<deployment>" para Foundry, "gemini/<modelo>" para Google.
 # Si no hay modelo de Azure configurado todavía, el principal es Gemini.
-MODELO_RESPALDO = _env("MODELO_RESPALDO", "gemini/gemini-2.5-flash")
+MODELO_RESPALDO = _env("MODELO_RESPALDO", "gemini/gemini-3.5-flash")
 MODELO_PRINCIPAL = _env("MODELO_PRINCIPAL") or MODELO_RESPALDO
+# Modelo de los especialistas (niveles 2 y 3): solo buscan y resumen, así que basta uno más
+# liviano y barato. Vacío = el mismo del orquestador. En el plan gratuito de Gemini cada modelo
+# tiene su propio cupo por minuto, así que separar los modelos reparte la carga.
+MODELO_ESPECIALISTAS = _env("MODELO_ESPECIALISTAS") or MODELO_PRINCIPAL
 TIMEOUT_MODELO_S = float(_env("TIMEOUT_MODELO_S", "30"))
 REINTENTOS_MODELO = int(_env("REINTENTOS_MODELO", "2"))
 

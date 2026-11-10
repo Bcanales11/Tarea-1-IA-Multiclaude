@@ -41,6 +41,7 @@ async def main() -> None:
     p.add_argument("--lote", help="JSONL con query / ground_truth")
     p.add_argument("--n", type=int, default=0, help="solo las primeras N del lote")
     p.add_argument("--salida", default="respuestas.jsonl")
+    p.add_argument("--pausa", type=float, default=0, help="segundos de espera entre preguntas (cupo por minuto)")
     a = p.parse_args()
 
     runner = InMemoryRunner(agent=root_agent, app_name=APP)
@@ -57,6 +58,8 @@ async def main() -> None:
             r, ms = await preguntar(runner, c["query"])
             f.write(json.dumps({**c, "response": r, "ms": ms, "corrida": corrida}, ensure_ascii=False) + "\n")
             print(f"[{i}/{len(casos)}] {c['id']} {ms} ms")
+            if a.pausa and i < len(casos):
+                await asyncio.sleep(a.pausa)
     print(f"Listo: {a.salida} (corrida {corrida})")
 
 

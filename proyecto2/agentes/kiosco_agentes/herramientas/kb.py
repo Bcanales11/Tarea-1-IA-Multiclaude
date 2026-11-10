@@ -58,13 +58,23 @@ def _trocear_normativa(texto: str, fuente: str, tam: int = 900, solape: int = 15
     return [Fragmento(fuente, t) for t in trozos]
 
 
+_resumenes_vistos: set[str] = set()
+
+
 def _trocear_catalogo(texto: str, fuente: str) -> list[Fragmento]:
+    """Un fragmento por producto. Acepta el formato de lista ("- **Nombre**") y el de párrafo
+    ("**Nombre**", desde que kb-catalogo se dividió en archivos de 40 productos). El resumen de
+    la subcategoría se repite en cada parte: se indexa una sola vez."""
     lineas = texto.splitlines()
-    titulo = lineas[0].lstrip("# ").strip() if lineas else fuente
+    titulo = re.sub(r"\s*\(parte \d+ de \d+\)", "", lineas[0].lstrip("# ").strip()) if lineas else fuente
     frags = []
     for linea in lineas:
-        if linea.startswith("- **") or linea.startswith("Resumen de la subcategoría"):
+        linea = linea.strip()
+        if linea.startswith("- **") or linea.startswith("**"):
             frags.append(Fragmento(fuente, f"{titulo}. {linea.lstrip('- ')}"))
+        elif linea.startswith("Resumen de la subcategoría") and titulo not in _resumenes_vistos:
+            _resumenes_vistos.add(titulo)
+            frags.append(Fragmento(fuente, f"{titulo}. {linea}"))
     return frags
 
 
