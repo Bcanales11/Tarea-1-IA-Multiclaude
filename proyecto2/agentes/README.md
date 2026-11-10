@@ -133,3 +133,5 @@ La v3 usa el código desplegado: búsqueda híbrida del catálogo y herramientas
   - **N-032** (frutos secos naturales y sello): abre con "Sí" y recién después aclara que no deberían llevar sello. Respuesta confusa.
   - **A-005** (Manjar Río Bueno): ahora sí encuentra el producto, pero concluye que "solo podría venderse si no supera los límites", cuando con sello probable no se puede vender. El error pasó de la búsqueda al razonamiento del agente.
 - Con la fórmula del enunciado (acierto ≤ 95 % para que no sea trivial) estas 70 preguntas quedan justo en el borde. El golden set de 300 necesita más preguntas difíciles.
+
+**Refuerzo del prompt (10 nov, después de la v3):** el agente de productos y el orquestador ahora dicen explícitamente que un producto con sello "probable" no se puede vender (basta un sello, art. 110 bis) y que nunca se acepta "podría venderse si no supera los límites". Con esto A-005 (Manjar Río Bueno) dio la respuesta correcta en 3 de 3 ejecuciones; antes fallaba en v3.
