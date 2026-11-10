@@ -26,9 +26,10 @@ SELLOS_VALIDOS = {"AZUCARES", "SODIO", "CALORIAS", "GRASAS_SATURADAS"}
 ORIGENES_VALIDOS = {"vision", "chat"}
 
 
-def veredicto_por_regla(sellos: list[str]) -> str:
-    """Regla fija del sistema: con uno o más sellos 'ALTO EN' el producto es NO_APTO."""
-    return "NO_APTO" if sellos else "APTO"
+def veredicto_por_regla(sellos: list[str], sellos_ilegibles: int = 0) -> str:
+    """Regla fija del sistema: con uno o más sellos 'ALTO EN' el producto es NO_APTO.
+    Un sello que la cámara vio pero cuyo texto no pudo leer también cuenta (sellos_ilegibles)."""
+    return "NO_APTO" if sellos or sellos_ilegibles > 0 else "APTO"
 
 
 def _normalizar_sellos(sellos: list[str]) -> list[str]:
@@ -77,9 +78,9 @@ def _listar_local(kiosco_id: str, desde: str) -> list[dict]:
 # --- Herramientas que ven los agentes ------------------------------------------------
 
 def guardar_chequeo(producto: str, sellos: list[str], motivo: str, origen: str = "chat",
-                    kiosco_id: str = "", sku: str = "") -> dict:
+                    kiosco_id: str = "", sku: str = "", sellos_ilegibles: int = 0) -> dict:
     """Guarda en la base de datos el chequeo de un producto. El veredicto (APTO / NO_APTO) lo
-    calcula el sistema con la regla fija: con uno o más sellos es NO_APTO.
+    calcula el sistema con la regla fija: con uno o más sellos (legibles o no) es NO_APTO.
 
     Args:
         producto: nombre del producto. Ej: "Galletas X 120 g".
@@ -89,6 +90,8 @@ def guardar_chequeo(producto: str, sellos: list[str], motivo: str, origen: str =
         origen: "vision" si viene de la cámara, "chat" si lo informó una persona.
         kiosco_id: identificador del kiosco. Si va vacío se usa el del sistema.
         sku: SKU del catálogo, si se conoce.
+        sellos_ilegibles: sellos 'ALTO EN' que la cámara vio pero cuyo nutriente no pudo leer.
+            Si es mayor que 0, el producto es NO_APTO aunque `sellos` vaya vacía.
     """
     try:
         dato = {
@@ -99,7 +102,7 @@ def guardar_chequeo(producto: str, sellos: list[str], motivo: str, origen: str =
             "motivo": motivo.strip(),
             "origen": origen if origen in ORIGENES_VALIDOS else "chat",
         }
-        dato["veredicto"] = veredicto_por_regla(dato["sellos"])
+        dato["veredicto"] = veredicto_por_regla(dato["sellos"], int(sellos_ilegibles or 0))
         if config.REGISTRO_BACKEND == "api":
             r = httpx.post(f"{config.REGISTRO_API_URL}/chequeos", json=dato,
                            headers={"x-api-key": config.REGISTRO_API_KEY}, timeout=10)
