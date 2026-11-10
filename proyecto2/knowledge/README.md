@@ -5,7 +5,7 @@ Dos knowledge bases, cada una con una knowledge source. Lo que se sube a Foundry
 | Knowledge base | Archivos a subir | Contenido |
 |---|---|---|
 | `kb-normativa` | `kb-normativa/*.txt` (3 archivos) | Ley 20.606, Decreto 13/2015 (sellos, art. 110 bis y 120 bis) y Guía MINSAL de Kioscos Saludables |
-| `kb-catalogo` | `kb-catalogo/*.md` (14 archivos) | 1.561 productos envasados de Jumbo.cl, uno por línea, agrupados por subcategoría |
+| `kb-catalogo` | `kb-catalogo/*.md` (44 archivos de máximo 40 productos) | 1.561 productos envasados de Jumbo.cl (el CSV trae 1.562 filas y el SKU 380434 está repetido), uno por línea, agrupados por subcategoría |
 
 ## Por qué estos formatos
 
@@ -31,6 +31,6 @@ Lee `fuentes/metadata_jumbo.csv` (salida del scraper del Proyecto 1) y reescribe
 ## Pasos en Foundry (Benjamín)
 
 1. En el proyecto de Foundry, crear la knowledge base `kb-normativa` y agregarle una knowledge source con los 3 `.txt`.
-2. Crear `kb-catalogo` y agregarle una knowledge source con los 14 `.md`.
+2. Crear `kb-catalogo` y agregarle una knowledge source con los 44 `.md`.
 3. Probar cada una con una pregunta. Por ejemplo, "límite de sodio en sólidos etapa 3", que debe responder 400 mg/100 g, y "SKU del Chocolate de Leche Milka 125 g".
 4. Sacar capturas de cada paso en `../informe/capturas/`.

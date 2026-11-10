@@ -87,7 +87,7 @@ Sirven para que las piezas encajen sin esperar a los demás.
 | Nombre | Fuente | Contenido |
 |---|---|---|
 | `kb-normativa` | `proyecto2/knowledge/kb-normativa/*.txt` (3 archivos; texto limpio, porque en el PDF del decreto la tabla de límites es una imagen) | Ley 20.606, Decreto 13/2015 y Guía MINSAL de Kioscos Saludables |
-| `kb-catalogo` | `proyecto2/knowledge/kb-catalogo/*.md` (14 archivos, uno por subcategoría) | 1.561 productos de Jumbo con categoría, contenido neto, sólido o líquido y si tienen sello. ⚠️ El sello viene de una heurística sin revisión manual: declararlo como limitación |
+| `kb-catalogo` | `proyecto2/knowledge/kb-catalogo/*.md` (44 archivos de máximo 40 productos, por subcategoría) | 1.561 productos únicos de Jumbo (el CSV trae 1.562 filas y el SKU 380434 está repetido) con categoría, contenido neto, sólido o líquido y si tienen sello. ⚠️ El sello viene de una heurística sin revisión manual: declararlo como limitación |
 
 Detalle y pasos para subirlas: `proyecto2/knowledge/README.md`.
 
