@@ -34,7 +34,7 @@
 
 ## Buzón de Fernanda
 
-- [ ] (Max, para 10 nov) Revisar y ajustar las 70 preguntas de `evaluacion/preguntas_v1.jsonl` (ver el README de esa carpeta).
+- [ ] (Max, para 10 nov) ( Buzón: revisión de preguntas lista )Revisar y ajustar las 70 preguntas de `evaluacion/preguntas_v1.jsonl` (ver el README de esa carpeta).
 - [ ] (Max, para 16 nov) Cuando estén los system prompts de los agentes (`agentes/kiosco_agentes/`), pasarlos al informe con las limitaciones de cada uno.
 
 ## Buzón de Max
