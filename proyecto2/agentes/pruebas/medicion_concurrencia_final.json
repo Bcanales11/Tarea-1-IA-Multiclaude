@@ -1,0 +1,270 @@
+[
+  {
+    "id": "normativa-1#0",
+    "tipo": "normativa",
+    "ms": 8774,
+    "llamadas_modelo": 4,
+    "tokens_in": 6745,
+    "tokens_out": 236,
+    "tokens_cache": 0,
+    "llamadas_kb": {
+      "kb-normativa": 1
+    },
+    "kb_ms": [
+      2656
+    ],
+    "kb_tokens_in": 1024,
+    "kb_tokens_out": 76,
+    "kb_razonamiento": 73733,
+    "herramientas": {
+      "agente_normativo": 1
+    },
+    "modelos": {
+      "gpt-5.4-mini": 4
+    },
+    "error": null,
+    "respuesta": "El límite para un alimento sólido es **400 mg de sodio por 100 g** para no llevar sello **ALTO EN**. (Guía MINSAL de Kioscos Saludables, Tabla Nº 1; Decreto 13/2015, art. 120 bis)"
+  },
+  {
+    "id": "normativa-2#1",
+    "tipo": "normativa",
+    "ms": 9515,
+    "llamadas_modelo": 4,
+    "tokens_in": 6837,
+    "tokens_out": 348,
+    "tokens_cache": 0,
+    "llamadas_kb": {
+      "kb-normativa": 1
+    },
+    "kb_ms": [
+      3233
+    ],
+    "kb_tokens_in": 1035,
+    "kb_tokens_out": 88,
+    "kb_razonamiento": 73747,
+    "herramientas": {
+      "agente_normativo": 1
+    },
+    "modelos": {
+      "gpt-5.4-mini": 4
+    },
+    "error": null,
+    "respuesta": "No, dentro del kiosco escolar no se pueden publicitar productos con sello “ALTO EN”. Además, no se pueden vender, regalar ni promocionar los alimentos envasados con uno o más sellos, y la Guía MINSAL señala que los que superen los límites tampoco pueden ser publicitados en ningún lugar dentro de la "
+  },
+  {
+    "id": "catalogo#2",
+    "tipo": "catalogo",
+    "ms": 20445,
+    "llamadas_modelo": 9,
+    "tokens_in": 31161,
+    "tokens_out": 927,
+    "tokens_cache": 0,
+    "llamadas_kb": {
+      "kb-catalogo": 2,
+      "kb-normativa": 1
+    },
+    "kb_ms": [
+      3859,
+      4756,
+      2812
+    ],
+    "kb_tokens_in": 2944,
+    "kb_tokens_out": 274,
+    "kb_razonamiento": 981013,
+    "herramientas": {
+      "agente_productos": 1,
+      "agente_normativo": 1
+    },
+    "modelos": {
+      "gpt-5.4-mini": 9
+    },
+    "error": null,
+    "respuesta": "No está en las fuentes que tengo el perfil nutricional exacto del **Chocolate Milka 125 g**, así que no puedo confirmar aquí si cumple los límites. Si tiene **1 o más sellos “ALTO EN”**, no se puede vender en el kiosco escolar; si no tiene sellos y cumple los límites de etapa 3, sí podría venderse ("
+  },
+  {
+    "id": "alternativas#3",
+    "tipo": "alternativas",
+    "ms": 14097,
+    "llamadas_modelo": 6,
+    "tokens_in": 10289,
+    "tokens_out": 753,
+    "tokens_cache": 0,
+    "llamadas_kb": {
+      "kb-catalogo": 1
+    },
+    "kb_ms": [
+      4272
+    ],
+    "kb_tokens_in": 955,
+    "kb_tokens_out": 44,
+    "kb_razonamiento": 416762,
+    "herramientas": {
+      "agente_productos": 1
+    },
+    "modelos": {
+      "gpt-5.4-mini": 6
+    },
+    "error": null,
+    "respuesta": "Te sugiero estas alternativas sin sello detectado: **Galletas Salmas Clásica 108 g** (SKU 434615), **Galletas de Agua The Fresh Market Orgánica 124 g** (SKU 642962) y **Tortitas de Arroz Integral Bicentury Sin Sal 130 g** (SKU 300213). Todas son **sólidas** y aparecen **sin sello ALTO EN detectado**"
+  },
+  {
+    "id": "registro-camara#4",
+    "tipo": "registro",
+    "ms": 15637,
+    "llamadas_modelo": 7,
+    "tokens_in": 9914,
+    "tokens_out": 501,
+    "tokens_cache": 0,
+    "llamadas_kb": {
+      "kb-normativa": 1
+    },
+    "kb_ms": [
+      4854
+    ],
+    "kb_tokens_in": 1039,
+    "kb_tokens_out": 167,
+    "kb_razonamiento": 147472,
+    "herramientas": {
+      "agente_registro": 1,
+      "agente_normativo": 1
+    },
+    "modelos": {
+      "gpt-5.4-mini": 7
+    },
+    "error": null,
+    "respuesta": "Registrado: producto **NO APTO** con sello **AZÚCARES** y origen **vision** (id 23). No se puede vender porque la guía prohíbe expender alimentos envasados con uno o más sellos “ALTO EN…”, y **AZÚCARES** por sí solo ya aplica esa restricción (Guía MINSAL de Kioscos Saludables; art. 120 bis del RSA/L"
+  },
+  {
+    "id": "resumen#5",
+    "tipo": "resumen",
+    "ms": 10912,
+    "llamadas_modelo": 6,
+    "tokens_in": 7459,
+    "tokens_out": 495,
+    "tokens_cache": 0,
+    "llamadas_kb": {},
+    "kb_ms": [],
+    "kb_tokens_in": 0,
+    "kb_tokens_out": 0,
+    "kb_razonamiento": 0,
+    "herramientas": {
+      "agente_registro": 1
+    },
+    "modelos": {
+      "gpt-5.4-mini": 6
+    },
+    "error": null,
+    "respuesta": "Para el kiosco **colegio-001** hay **23 chequeos registrados**: **1 APTO** y **22 NO APTO**. El sello más frecuente fue **AZUCARES**, y los rechazos se repiten en productos detectados por cámara o no especificados; todos los registros de esta consulta aparecen en **2026-11-10**."
+  },
+  {
+    "id": "normativa-1#6",
+    "tipo": "normativa",
+    "ms": 14858,
+    "llamadas_modelo": 4,
+    "tokens_in": 6455,
+    "tokens_out": 235,
+    "tokens_cache": 0,
+    "llamadas_kb": {
+      "kb-normativa": 1
+    },
+    "kb_ms": [
+      4901
+    ],
+    "kb_tokens_in": 1027,
+    "kb_tokens_out": 156,
+    "kb_razonamiento": 147460,
+    "herramientas": {
+      "agente_normativo": 1
+    },
+    "modelos": {
+      "gpt-5.4-mini": 4
+    },
+    "error": null,
+    "respuesta": "Para un alimento sólido, el límite es **400 mg de sodio por 100 g**; si lo supera, debe llevar sello **“ALTO EN SODIO”** (Guía MINSAL de Kioscos Saludables, Tabla Nº 1; art. 120 bis del RSA)."
+  },
+  {
+    "id": "normativa-2#7",
+    "tipo": "normativa",
+    "ms": 10216,
+    "llamadas_modelo": 4,
+    "tokens_in": 6742,
+    "tokens_out": 522,
+    "tokens_cache": 0,
+    "llamadas_kb": {
+      "kb-normativa": 1
+    },
+    "kb_ms": [
+      2972
+    ],
+    "kb_tokens_in": 1035,
+    "kb_tokens_out": 89,
+    "kb_razonamiento": 73746,
+    "herramientas": {
+      "agente_normativo": 1
+    },
+    "modelos": {
+      "gpt-5.4-mini": 4
+    },
+    "error": null,
+    "respuesta": "No, dentro de un kiosco escolar no se puede publicitar productos envasados con sello **“ALTO EN”** ni tampoco regalarlos o promoverlos. La Guía MINSAL indica además que la restricción incluye afiches, pintura del kiosco, infraestructura y otros mensajes promocionales dentro de la escuela; sí permite"
+  },
+  {
+    "id": "catalogo#8",
+    "tipo": "catalogo",
+    "ms": 16086,
+    "llamadas_modelo": 7,
+    "tokens_in": 25720,
+    "tokens_out": 797,
+    "tokens_cache": 4096,
+    "llamadas_kb": {
+      "kb-catalogo": 1,
+      "kb-normativa": 2
+    },
+    "kb_ms": [
+      3846,
+      3656,
+      2405
+    ],
+    "kb_tokens_in": 3025,
+    "kb_tokens_out": 234,
+    "kb_razonamiento": 564250,
+    "herramientas": {
+      "agente_productos": 1,
+      "agente_normativo": 1
+    },
+    "modelos": {
+      "gpt-5.4-mini": 7
+    },
+    "error": null,
+    "respuesta": "En principio, **no deberías vender ese Chocolate Milka 125 g si tiene sello “ALTO EN”**; en kiosco escolar basta un sello para que quede fuera de venta. El producto del catálogo aparece como **sólido** y con **sello ALTO EN: probable**, así que debe verificarse el envase antes de ofrecerlo. **Fuente"
+  },
+  {
+    "id": "alternativas#9",
+    "tipo": "alternativas",
+    "ms": 17045,
+    "llamadas_modelo": 8,
+    "tokens_in": 15289,
+    "tokens_out": 895,
+    "tokens_cache": 0,
+    "llamadas_kb": {
+      "kb-normativa": 1,
+      "kb-catalogo": 1
+    },
+    "kb_ms": [
+      3215,
+      3931
+    ],
+    "kb_tokens_in": 1990,
+    "kb_tokens_out": 142,
+    "kb_razonamiento": 490519,
+    "herramientas": {
+      "agente_productos": 1,
+      "agente_normativo": 1
+    },
+    "modelos": {
+      "gpt-5.4-mini": 8
+    },
+    "error": null,
+    "respuesta": "Sí: te sugiero como alternativas sin sello las Galletas Saladas Sacapita Sal de Mar 120 g (SKU 610885), Galletas Salmas Clásica 108 g (SKU 434615) y Tortitas de Arroz Integral Bicentury Sin Sal 130 g (SKU 300213); todas son sólidos y no tienen sello detectado en el catálogo. Recuerda que las galleta"
+  }
+]

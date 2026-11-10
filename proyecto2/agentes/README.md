@@ -95,3 +95,23 @@ gcloud run deploy kiosco-agentes --image southamerica-west1-docker.pkg.dev/kiosc
 - **El respaldo con Gemini en plan gratuito tiene cupo diario.** El 9 nov, una corrida de las 70 preguntas solo con Gemini lo agotó después de 2 preguntas, y las 68 restantes recibieron la respuesta controlada de error (sin caídas). En producción el respaldo debe ir en plan de pago o con otro deployment de Azure en otra región.
 - Las sesiones del servidor están en memoria: si Cloud Run reinicia la instancia, se pierde el historial de la conversación (no los chequeos, que van a la BD).
 - La ruta y la versión de la API de knowledge bases de Foundry (`_buscar_foundry`) se confirman cuando estén creadas.
+
+## Corrida v2 (después de la corrección de búsqueda por nombre exacto)
+
+**Problema (corrida de referencia del 9 nov):** 2 de las 3 fallas eran búsquedas de producto por nombre exacto (C-011 "Mermelada Vivo Berries Sin Azúcar 200 g" y A-005 "Manjar Río Bueno Bolsa 1 kg"). Diagnóstico: la búsqueda semántica de Foundry devuelve fragmentos de 40 productos de la subcategoría correcta, pero **el producto exacto no venía** entre ellos (ni con k=10 ni quitando el gramaje o dejando solo la marca), y el modelo describía el producto parecido (Watt's, Soprole) como si fuera el pedido.
+
+**Qué se cambió:**
+- `herramientas/kb.py`, `buscar_catalogo`: en modo `foundry` ahora es una **búsqueda híbrida**: semántica de Foundry + coincidencia exacta por nombre/SKU sobre el índice local de los mismos archivos (`_coincidencia_exacta`). Los productos que contienen todas las palabras de la consulta (marca, tipo, gramaje) o el SKU van primero con el encabezado "COINCIDENCIA EXACTA"; si falta alguna palabra, "COINCIDENCIA PARCIAL"; si no hay ninguna, un "AVISO" con las palabras que no aparecen en ningún resultado (`_palabras_sin_aparecer`). La firma y la búsqueda local no cambian.
+- `prompts/productos.md`: reglas 2 y 3 nuevas. El agente verifica marca, nombre y gramaje, y si no existe ese producto exacto lo dice y presenta los parecidos como "parecidos, no el mismo producto". La sección de limitaciones lo menciona.
+
+**Resultado (70 preguntas, gpt-5.4-mini + Foundry, juez gpt-5.4-mini; `respuestas_v2_azure.jsonl`, 10 nov):**
+
+| Tipo | v1 | v2 |
+|---|---|---|
+| normativa | 40/40 | 37/40 |
+| catálogo | 15/16 | 16/16 |
+| ambas | 6/8 | 8/8 |
+| ninguna | 6/6 | 5/6 |
+| **Total** | **67/70** | **66/70** |
+
+C-011, A-005 y A-008 pasan a correctas (A-008 ya era un error del juez en v1). Las 4 incorrectas de v2 son de normativa o "ninguna", un camino que no se tocó (la recuperación de `buscar_normativa` es la misma y da el mismo texto en repeticiones; cambia cómo el modelo lo interpreta entre corridas): N-021 (no confirma que la prohibición alcance a los puntos de acceso), N-038 (invierte la diferencia entre kiosco tipo A y B; el texto de la guía, extraído de un PDF con columnas, sale desordenado), N-032 (el juez la marca mal en una corrida, pero en otra el modelo sí contradijo la excepción) y T-005 (la respuesta no inventa el sello específico y el juez la marca incorrecta por citar los sellos posibles; es un falso negativo del juez). La variación de 1 a 3 preguntas entre corridas es ruido del modelo, no efecto de este cambio.

@@ -4,3 +4,4 @@ datos_local/
 respuestas*.jsonl
 *.log
 respuestas*_juez.json
+!pruebas/evidencia/*.log
