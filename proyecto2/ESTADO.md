@@ -2,7 +2,7 @@
 
 > **Para tu Claude:** lee este archivo **al empezar cada sesión** (después de `git pull origin main`) y **al terminar** actualízalo con cambios puntuales: no lo sobrescribas entero, porque lo editamos los tres. Fecha en cada línea nueva. Si algo no está claro, pregúntale a tu persona antes de escribir aquí a nombre de otro.
 
-Última actualización: 9 nov 2026 (armado inicial, Max; agentes y §4.5, Max; modelo de Foundry y catálogo dividido, Max).
+Última actualización: 10 nov 2026 (Max: agentes en Cloud Run, pruebas y costos). Antes: 9 nov 2026 (armado inicial, Max; agentes y §4.5, Max; modelo de Foundry y catálogo dividido, Max).
 
 ## Cómo usarlo
 
@@ -22,7 +22,7 @@
 | Modelo desplegado en Foundry | hecho (Benjamín) | 9 nov: deployment `gpt-5.4-mini` (Estándar global, East US), API v1. Conectado a los agentes |
 | Corridas de evaluación (2 o 3) | por hacer (Fernanda) | necesita las KB listas |
 | Informe PDF del 10 nov | por hacer (Fernanda) | necesita capturas de Benjamín |
-| Agentes ADK en Cloud Run | en curso (Max) | 9 nov: 6 agentes en 3 niveles, logs, reintento/respaldo y servidor en `agentes/`. **9 nov, noche: funcionando con `gpt-5.4-mini` de Foundry + KB de Foundry**, Gemini como respaldo (probado: límites por etapa, venta de producto, registro de cámara). 9 nov, noche: **app del kiosco conectada** (`app_kiosco/`, con la pausa del modo continuo; probada con fotos, chat y resumen, y con respaldo local si los agentes no responden). **10 nov: desplegado en Cloud Run** (`kiosco-g19-agentes`, `southamerica-west1`, privado + x-api-key, secretos en Secret Manager de Google; probado). Falta: abrir el acceso para la app del kiosco, API de registro de Benjamín y Key Vault |
+| Agentes ADK en Cloud Run | casi listo (Max) | 9 nov: 6 agentes en 3 niveles, logs, reintento/respaldo y servidor en `agentes/`. **9 nov, noche: funcionando con `gpt-5.4-mini` de Foundry + KB de Foundry**, Gemini como respaldo (probado: límites por etapa, venta de producto, registro de cámara). 9 nov, noche: **app del kiosco conectada** (`app_kiosco/`, con la pausa del modo continuo; probada con fotos, chat y resumen, y con respaldo local si los agentes no responden). **10 nov: desplegado en Cloud Run** (`kiosco-g19-agentes`, `southamerica-west1`, privado + x-api-key, secretos en Secret Manager de Google; probado). 10 nov: búsqueda híbrida del catálogo (corrige C-011 y A-005), herramientas en hilos (10 consultas simultáneas: 13,8 s de media), 28 tests y 4 escenarios de falla con logs en `agentes/pruebas/`, y costos con números. Falta: abrir el acceso a Cloud Run para la app del kiosco (hoy privado), API de registro de Benjamín y Key Vault |
 | API de registro + BD | por hacer (Benjamín) | para el 16 nov |
 
 ## Buzón de Benjamín
@@ -35,10 +35,13 @@
 
 - [ ] (Max, 9 nov, para 16 nov) En la API de registro (4.3), **guardar el `veredicto` que llega, sin recalcularlo desde `sellos`**: si la cámara ve un sello pero no puede leer el nutriente, llega `veredicto: NO_APTO` con `sellos: []`. Validar solo que `veredicto` sea APTO o NO_APTO.
 
+- [ ] (Max, 10 nov, para 16 nov) Para cerrar costos y escalabilidad (`agentes/COSTOS_Y_ESCALABILIDAD.md` sección 6): confirmar el **nivel real de Azure AI Search** (Basic, Standard…) y la **cuota en tokens por minuto del deployment `gpt-5.4-mini`**. El documento supone Basic y 1 M de tokens por minuto; con 50 kioscos sincronizados en el recreo se usaría el 91 % de esa cuota. Además hay que sumar lo suyo (BD, Key Vault, API de registro, redes) a los totales.
+- [ ] (Max, 10 nov, para 16 nov) La **IP de salida fija** de Cloud Run (conector VPC + Cloud NAT) se coordina con Benjamín para los firewalls y el NSG. Hoy el servicio sale con IP variable y las claves están en Secret Manager de Google, no en Key Vault.
+
 ## Buzón de Fernanda
 
 - [ ] (Max, para 10 nov) ( Buzón: revisión de preguntas lista )Revisar y ajustar las 70 preguntas de `evaluacion/preguntas_v1.jsonl` (ver el README de esa carpeta).
-- [ ] (Max, para 16 nov) Cuando estén los system prompts de los agentes (`agentes/kiosco_agentes/`), pasarlos al informe con las limitaciones de cada uno.
+- [ ] (Max, para 16 nov) Pasar al informe los system prompts de los agentes con las limitaciones de cada uno. → 10 nov: **ya están en main**, en `agentes/kiosco_agentes/prompts/*.md` (uno por agente, cada uno con su sección "Limitaciones conocidas"). Además: `agentes/COSTOS_Y_ESCALABILIDAD.md` (costos y concurrencia con números), `agentes/pruebas/README.md` (tabla requisito → evidencia de logs, reintento y respaldo) y `evaluacion/corrida_referencia_9nov.md`.
 
 ## Buzón de Max
 
