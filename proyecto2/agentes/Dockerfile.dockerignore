@@ -1,0 +1,11 @@
+**/.venv
+**/.env
+**/datos_local
+**/__pycache__
+**/respuestas*.jsonl
+informe
+evaluacion
+api_registro
+infra
+knowledge/fuentes
+*.pdf
