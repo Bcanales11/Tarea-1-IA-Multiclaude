@@ -72,7 +72,12 @@ class _LoggerLiteLLM(CustomLogger):
     async def async_log_success_event(self, kwargs, response_obj, start_time, end_time):
         modelo = kwargs.get("model", "")
         ms = int((end_time - start_time).total_seconds() * 1000)
-        if config.MODELO_PRINCIPAL.split("/", 1)[-1] not in str(modelo):
+        # Respaldo = respondió exactamente el modelo de respaldo y no uno de los modelos propios de
+        # los agentes (principal o de especialistas). Comparación exacta: "gemini-3.5-flash" no debe
+        # confundirse con "gemini-3.5-flash-lite", que puede ser el modelo de los especialistas.
+        base = lambda m: str(m).split("/", 1)[-1]  # noqa: E731
+        propios = {base(config.MODELO_PRINCIPAL), base(config.MODELO_ESPECIALISTAS or config.MODELO_PRINCIPAL)}
+        if base(modelo) == base(config.MODELO_RESPALDO) and base(modelo) not in propios:
             evento("modelo_respaldo", logging.WARNING, modelo=modelo, ms=ms)
 
     async def async_log_failure_event(self, kwargs, response_obj, start_time, end_time):
@@ -115,7 +120,7 @@ def error_modelo(callback_context, llm_request, error):
     evento("modelo_error", logging.ERROR, agente=callback_context.agent_name, ms=ms,
            error=type(error).__name__, detalle=str(error)[:300])
     texto = ("El servicio de IA no respondió a tiempo (se reintentó y se probó el modelo de respaldo). "
-             "El veredicto de la cámara sigue siendo válido; intenta la consulta de nuevo en un momento.")
+             "Si venía de la cámara, el veredicto sigue siendo válido; intenta la consulta de nuevo en un momento.")
     return LlmResponse(content=types.Content(role="model", parts=[types.Part(text=texto)]))
 
 

@@ -6,6 +6,10 @@ Dos backends (variable KB_BACKEND):
 - "foundry": knowledge bases de Azure AI Foundry. ⚠️ El endpoint y la versión de API se
   confirman cuando Benjamín cree las knowledge bases (FOUNDRY_KB_API_VERSION en .env).
 
+En modo foundry, `buscar_catalogo` es una búsqueda HÍBRIDA: semántica de Foundry + coincidencia
+exacta por nombre/SKU sobre los mismos archivos (ver `_coincidencia_exacta`). La semántica sola
+recupera productos "parecidos" pero puede dejar fuera el producto exacto (medido el 9 nov).
+
 Las funciones públicas `buscar_normativa` y `buscar_catalogo` son las herramientas que ven
 los agentes: sus docstrings son la descripción que lee el modelo.
 """
@@ -152,6 +156,48 @@ def _buscar_foundry(kb: str, consulta: str, k: int) -> list[Fragmento]:
             for it in items[:k] if it.get("content")]
 
 
+def _coincidencia_exacta(consulta: str, solo_sin_sello: bool = False,
+                         max_resultados: int = 5) -> tuple[list[Fragmento], bool]:
+    """Parte "exacta" de la búsqueda híbrida del catálogo: busca por SKU (número de 5 a 7 dígitos)
+    o por nombre sobre el índice local de los mismos archivos que Foundry. Un producto cuenta como
+    coincidencia si contiene al menos el 80 % de las palabras de la consulta (marca, tipo, gramaje) y
+    la consulta tiene 2 palabras o más; es EXACTA si las contiene todas, y si no es PARCIAL (solo se
+    devuelven las de mayor cobertura). Consultas vagas ("snacks sin sello") no coinciden y se
+    resuelven solo con la semántica de Foundry. Devuelve (productos, es_exacta)."""
+    q = list(dict.fromkeys(_normalizar(consulta)))
+    if not q:
+        return [], False
+    indice = _indice_local(config.KB_CATALOGO)
+    skus = [t for t in q if re.fullmatch(r"\d{5,7}", t)]
+    encontrados = []
+    for frag, toks in zip(indice.frags, indice.tokens):
+        if "| SKU" not in frag.texto:
+            continue
+        if solo_sin_sello and "Sello ALTO EN: no detectado" not in frag.texto:
+            continue
+        conjunto = set(toks)
+        if skus:
+            ok = any(s in conjunto for s in skus)
+            cobertura = 1.0
+        else:
+            cobertura = sum(t in conjunto for t in q) / len(q)
+            ok = len(q) >= 2 and cobertura >= 0.8
+        if ok:
+            # Se quita el prefijo de subcategoría: queda "**Nombre** | SKU ..."
+            encontrados.append((cobertura, Fragmento(frag.fuente, frag.texto[frag.texto.find("**"):])))
+    encontrados.sort(key=lambda x: -x[0])
+    if not encontrados:
+        return [], False
+    mejor = encontrados[0][0]
+    return [f for c, f in encontrados if c == mejor][:max_resultados], mejor >= 1.0
+
+
+def _palabras_sin_aparecer(consulta: str, frags: list[Fragmento]) -> list[str]:
+    """Palabras de la consulta (no numéricas, de 3+ letras) que no aparecen en ningún resultado."""
+    visto = set(t for f in frags for t in _normalizar(f.texto))
+    return [t for t in dict.fromkeys(_normalizar(consulta)) if len(t) >= 3 and not t.isdigit() and t not in visto]
+
+
 def _formatear(frags: list[Fragmento]) -> str:
     if not frags:
         return "SIN_RESULTADOS: no se encontró nada en la knowledge base para esta consulta."
@@ -175,13 +221,17 @@ def buscar_normativa(consulta: str) -> str:
 def buscar_catalogo(consulta: str, solo_sin_sello: bool = False) -> str:
     """Busca productos en el catálogo (1.561 productos envasados de Jumbo.cl). Cada resultado
     trae nombre, SKU, categoría, contenido neto, si es sólido o líquido, y si se detectó sello
-    "ALTO EN" (detección automática, no verificada a mano).
+    "ALTO EN" (detección automática, no verificada a mano). Es una búsqueda híbrida: primero la
+    coincidencia exacta por nombre o SKU (marca, tipo y gramaje; se marca "COINCIDENCIA EXACTA") y
+    después los productos semánticamente parecidos. Si no hay coincidencia exacta avisa con "AVISO".
 
     Args:
-        consulta: nombre del producto, marca o subcategoría. Ej: "Chocolate Milka 125 g".
+        consulta: nombre del producto, marca, SKU o subcategoría. Ej: "Chocolate Milka 125 g".
         solo_sin_sello: True para devolver solo productos sin sello detectado (alternativas).
     """
     if config.KB_BACKEND == "foundry":
+        # Búsqueda híbrida: coincidencia exacta por nombre/SKU (primero) + semántica de Foundry.
+        exactos, es_exacta = _coincidencia_exacta(consulta, solo_sin_sello)
         extra = " con Sello ALTO EN: no detectado" if solo_sin_sello else ""
         frags = _buscar_foundry(config.KB_CATALOGO, consulta + extra, k=10)
         if solo_sin_sello:
@@ -192,6 +242,16 @@ def buscar_catalogo(consulta: str, solo_sin_sello: bool = False) -> str:
                 if lineas:
                     sin_sello.append(Fragmento(f.fuente, "\n".join(lineas)))
             frags = sin_sello
-        return _formatear(frags)
+        if exactos:
+            titulo = ("COINCIDENCIA EXACTA con la consulta (estos son los productos pedidos):" if es_exacta else
+                      "COINCIDENCIA PARCIAL: falta alguna palabra de la consulta; verifica marca, nombre y gramaje "
+                      "antes de presentarlo como el producto pedido:")
+            texto = titulo + "\n" + "\n".join(f.texto for f in exactos)
+            return _formatear([Fragmento("coincidencia exacta por nombre/SKU", texto)] + frags)
+        faltan = _palabras_sin_aparecer(consulta, frags)
+        aviso = (f"AVISO: ninguna coincidencia exacta; las palabras {faltan} de la consulta no aparecen en ningún "
+                 "resultado. Si pidieron un producto concreto, los resultados son PARECIDOS, no el producto pedido.\n\n"
+                 ) if faltan else ""
+        return aviso + _formatear(frags)
     filtro = (lambda f: "Sello ALTO EN: no detectado" in f.texto) if solo_sin_sello else None
     return _formatear(_indice_local(config.KB_CATALOGO).buscar(consulta, k=8, filtro=filtro))
