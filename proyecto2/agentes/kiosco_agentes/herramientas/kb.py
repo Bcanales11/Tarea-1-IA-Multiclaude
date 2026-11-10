@@ -12,6 +12,7 @@ los agentes: sus docstrings son la descripción que lee el modelo.
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import re
@@ -122,20 +123,33 @@ def _indice_local(kb: str) -> IndiceBM25:
     return IndiceBM25(frags)
 
 
-def _buscar_foundry(kb: str, consulta: str) -> str:
-    """Consulta una knowledge base de Foundry. ⚠️ Verificar ruta y versión de API al crearla."""
-    if not (config.FOUNDRY_SEARCH_ENDPOINT and config.FOUNDRY_SEARCH_API_KEY and config.FOUNDRY_KB_API_VERSION):
-        raise RuntimeError("Faltan FOUNDRY_SEARCH_ENDPOINT / FOUNDRY_SEARCH_API_KEY / FOUNDRY_KB_API_VERSION")
+def _buscar_foundry(kb: str, consulta: str, k: int) -> list[Fragmento]:
+    """Consulta una knowledge base de Foundry IQ (Azure AI Search, recuperación agéntica).
+
+    Probado el 9 nov con api-version 2026-05-01-preview. La respuesta trae:
+    - response[0].content[0].text: JSON con [{ref_id, content}, ...]
+    - references: [{id, docName, rerankerScore, ...}] (id = ref_id)
+    Se devuelven los k fragmentos con mayor rerankerScore, con el documento de origen.
+    """
+    if not (config.FOUNDRY_SEARCH_ENDPOINT and config.FOUNDRY_SEARCH_API_KEY):
+        raise RuntimeError("Faltan FOUNDRY_SEARCH_ENDPOINT / FOUNDRY_SEARCH_API_KEY")
     url = f"{config.FOUNDRY_SEARCH_ENDPOINT.rstrip('/')}/knowledgebases/{kb}/retrieve"
     cuerpo = {"messages": [{"role": "user", "content": [{"type": "text", "text": consulta}]}]}
-    r = httpx.post(url, params={"api-version": config.FOUNDRY_KB_API_VERSION},
-                   headers={"api-key": config.FOUNDRY_SEARCH_API_KEY}, json=cuerpo, timeout=20)
+    r = httpx.post(url, params={"api-version": config.FOUNDRY_KB_API_VERSION or "2026-05-01-preview"},
+                   headers={"api-key": config.FOUNDRY_SEARCH_API_KEY}, json=cuerpo, timeout=40)
     r.raise_for_status()
     datos = r.json()
-    try:
-        return "\n\n".join(c["text"] for m in datos["response"] for c in m["content"] if c.get("text"))
-    except (KeyError, TypeError):
-        return str(datos)[:6000]
+    refs = {str(x.get("id")): x for x in datos.get("references", [])}
+    items = []
+    for m in datos.get("response", []):
+        for c in m.get("content", []):
+            try:
+                items += json.loads(c.get("text") or "[]")
+            except (json.JSONDecodeError, TypeError):
+                items.append({"ref_id": None, "content": c.get("text", "")})
+    items.sort(key=lambda it: -(refs.get(str(it.get("ref_id")), {}).get("rerankerScore") or 0))
+    return [Fragmento(refs.get(str(it.get("ref_id")), {}).get("docName", kb), it.get("content", ""))
+            for it in items[:k] if it.get("content")]
 
 
 def _formatear(frags: list[Fragmento]) -> str:
@@ -154,7 +168,7 @@ def buscar_normativa(consulta: str) -> str:
         consulta: la pregunta o palabras clave, en español. Ej: "límite de sodio sólidos etapa 3".
     """
     if config.KB_BACKEND == "foundry":
-        return _buscar_foundry(config.KB_NORMATIVA, consulta)
+        return _formatear(_buscar_foundry(config.KB_NORMATIVA, consulta, k=6))
     return _formatear(_indice_local(config.KB_NORMATIVA).buscar(consulta, k=5))
 
 
@@ -168,7 +182,16 @@ def buscar_catalogo(consulta: str, solo_sin_sello: bool = False) -> str:
         solo_sin_sello: True para devolver solo productos sin sello detectado (alternativas).
     """
     if config.KB_BACKEND == "foundry":
-        extra = " sello ALTO EN no detectado" if solo_sin_sello else ""
-        return _buscar_foundry(config.KB_CATALOGO, consulta + extra)
+        extra = " con Sello ALTO EN: no detectado" if solo_sin_sello else ""
+        frags = _buscar_foundry(config.KB_CATALOGO, consulta + extra, k=10)
+        if solo_sin_sello:
+            # Foundry agrupa varios productos por fragmento: se filtra producto por producto.
+            sin_sello = []
+            for f in frags:
+                lineas = [l for l in f.texto.splitlines() if "Sello ALTO EN: no detectado" in l]
+                if lineas:
+                    sin_sello.append(Fragmento(f.fuente, "\n".join(lineas)))
+            frags = sin_sello
+        return _formatear(frags)
     filtro = (lambda f: "Sello ALTO EN: no detectado" in f.texto) if solo_sin_sello else None
     return _formatear(_indice_local(config.KB_CATALOGO).buscar(consulta, k=8, filtro=filtro))
