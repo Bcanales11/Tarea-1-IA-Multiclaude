@@ -44,7 +44,12 @@ Nivel 2    ├── agente_normativo ....... buscar_normativa  → kb-normativa
 |---|---|---|
 | `KB_BACKEND` | Búsqueda propia sobre `../knowledge/kb-*` (mismos archivos que Foundry) | `foundry` |
 | `REGISTRO_BACKEND` | SQLite en `datos_local/` | `api` |
-| `MODELO_PRINCIPAL` | vacío = Gemini | `azure/<deployment>` |
+| `MODELO_PRINCIPAL` | vacío = Gemini (`gemini/gemini-3.5-flash`) | `azure/<deployment>` |
+| `MODELO_ESPECIALISTAS` | `gemini/gemini-3.5-flash-lite` | el que defina el grupo (más barato que el del orquestador) |
+
+**Por qué el orquestador y los especialistas usan modelos distintos:** los especialistas solo buscan y resumen, así que basta un modelo liviano y más barato (sirve para la sección de costos). Además, en el plan gratuito de Gemini cada modelo tiene su propio cupo por minuto: con un solo modelo, las preguntas que pasan por 3 o 4 agentes chocaban con `RateLimitError`. Para lotes largos: `python probar.py --lote ... --pausa 20`.
+
+**Prueba con modelo real (9 nov, Gemini):** límite de sodio (respondió 400 mg/100 g, etapa 3, con fuente), "¿puedo vender el Milka 125 g?" (no; consultó catálogo + ley + alternativas), registro de cámara (NO_APTO calculado por la regla) y la pregunta trampa de la multa ("no está en las fuentes"). Un `ServiceUnavailableError` de Google se resolvió solo con el reintento.
 
 ## Cómo correrlo en local
 

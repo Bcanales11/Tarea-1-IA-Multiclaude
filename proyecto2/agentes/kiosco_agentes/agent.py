@@ -34,8 +34,8 @@ def _prompt(nombre: str) -> str:
     return (_PROMPTS / f"{nombre}.md").read_text(encoding="utf-8")
 
 
-def _agente(nombre: str, prompt: str, descripcion: str, tools: list) -> LlmAgent:
-    return LlmAgent(name=nombre, model=crear_modelo(), description=descripcion,
+def _agente(nombre: str, prompt: str, descripcion: str, tools: list, especialista: bool = True) -> LlmAgent:
+    return LlmAgent(name=nombre, model=crear_modelo(especialista), description=descripcion,
                     instruction=_prompt(prompt), tools=tools, **logs.CALLBACKS)
 
 
@@ -71,4 +71,5 @@ agente_registro = _agente(
 root_agent = _agente(
     "orquestador", "orquestador",
     "Orquestador del Kiosco Escolar Saludable: delega en los especialistas y arma la respuesta final.",
-    [AgentTool(agente_normativo), AgentTool(agente_productos), AgentTool(agente_registro)])
+    [AgentTool(agente_normativo), AgentTool(agente_productos), AgentTool(agente_registro)],
+    especialista=False)

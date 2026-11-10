@@ -14,8 +14,10 @@ from google.adk.models.lite_llm import LiteLlm
 from . import config
 
 
-def crear_modelo() -> LiteLlm:
+def crear_modelo(especialista: bool = False) -> LiteLlm:
+    """Orquestador: MODELO_PRINCIPAL. Especialistas (niveles 2 y 3): MODELO_ESPECIALISTAS."""
+    modelo = config.MODELO_ESPECIALISTAS if especialista else config.MODELO_PRINCIPAL
     extra = {"num_retries": config.REINTENTOS_MODELO, "timeout": config.TIMEOUT_MODELO_S}
-    if config.MODELO_PRINCIPAL != config.MODELO_RESPALDO:
+    if modelo != config.MODELO_RESPALDO:
         extra["fallbacks"] = [config.MODELO_RESPALDO]
-    return LiteLlm(model=config.MODELO_PRINCIPAL, **extra)
+    return LiteLlm(model=modelo, **extra)
