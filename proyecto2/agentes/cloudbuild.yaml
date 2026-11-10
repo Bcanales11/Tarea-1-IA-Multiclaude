@@ -1,0 +1,10 @@
+# Construye la imagen de los agentes en Google Cloud Build (no hace falta Docker local).
+# Desde proyecto2/:
+#   gcloud builds submit --config agentes/cloudbuild.yaml --substitutions=_IMAGEN=<imagen> .
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-f", "agentes/Dockerfile", "-t", "${_IMAGEN}", "."]
+images:
+  - "${_IMAGEN}"
+substitutions:
+  _IMAGEN: southamerica-west1-docker.pkg.dev/kiosco-g19-agentes/kiosco/agentes

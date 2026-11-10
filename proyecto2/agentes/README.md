@@ -73,19 +73,21 @@ uvicorn servidor:app --port 8080  # servidor local; GET http://localhost:8080/sa
 - Foundry agrupa varios productos del catálogo por fragmento, por eso el filtro de alternativas sin sello se aplica producto por producto.
 - Las claves de 84 caracteres son de Azure OpenAI y las de 52 son de Azure AI Search: si dan "invalid subscription key", revisar que no estén cruzadas.
 
-## Despliegue en Cloud Run (pendiente: proyecto de Google Cloud con facturación)
+## Despliegue en Cloud Run (hecho el 10 nov)
+
+Proyecto `kiosco-g19-agentes`, servicio `kiosco-agentes`, región `southamerica-west1` (Santiago), imagen construida con Cloud Build (no hace falta Docker local). Las 4 claves (`gemini-api-key`, `azure-openai-api-key`, `foundry-search-api-key`, `agentes-api-key`) están en Secret Manager de Google y llegan al servicio como variables de entorno. Nada va en la imagen ni en el repo.
 
 ```bash
 cd proyecto2
-IMAGEN=southamerica-west1-docker.pkg.dev/PROYECTO/kiosco/agentes
-gcloud auth configure-docker southamerica-west1-docker.pkg.dev
-docker build -f agentes/Dockerfile -t $IMAGEN .
-docker push $IMAGEN
-gcloud run deploy kiosco-agentes --image $IMAGEN \
-  --region southamerica-west1 --set-env-vars KB_BACKEND=foundry,REGISTRO_BACKEND=api,KEY_VAULT_URL=...
+gcloud builds submit --config agentes/cloudbuild.yaml --region southamerica-west1 .
+gcloud run deploy kiosco-agentes --image southamerica-west1-docker.pkg.dev/kiosco-g19-agentes/kiosco/agentes   --region southamerica-west1 --service-account kiosco-agentes-sa@kiosco-g19-agentes.iam.gserviceaccount.com   --no-allow-unauthenticated --min-instances 0 --max-instances 1 --memory 1Gi --concurrency 10 --timeout 300   --env-vars-file env_cloudrun.yaml --set-secrets GEMINI_API_KEY=gemini-api-key:latest,AZURE_API_KEY=azure-openai-api-key:latest,FOUNDRY_SEARCH_API_KEY=foundry-search-api-key:latest,AGENTES_API_KEY=agentes-api-key:latest
 ```
 
-Región `southamerica-west1` (Santiago): menor latencia para los colegios. La IP de salida fija para los firewalls de Azure (conector VPC + Cloud NAT) se coordina con Benjamín.
+- **Acceso:** el servicio es **privado** (exige identidad de Google) y además `/consulta` pide `x-api-key`. Probado: sin credencial 403, con clave incorrecta 401, y con ambas bien responde (límite de sodio en 9,6 s; registro de cámara en 11,2 s).
+- **Una sola instancia** (`--max-instances 1`): las sesiones del chat están en memoria. Para escalar a varios kioscos hay que moverlas a una BD (ver costos y escalabilidad en el informe).
+- **Costo:** presupuesto de 1.000 CLP (unos US$1) con avisos al 50 %, 90 % y 100 %.
+- Registro en modo `local` (SQLite dentro del contenedor, se pierde al reiniciar) hasta que Benjamín entregue la API de registro; entonces se cambia `REGISTRO_BACKEND=api`.
+- La IP de salida fija para los firewalls de Azure (conector VPC + Cloud NAT) se coordina con Benjamín.
 
 ## Limitaciones conocidas
 
