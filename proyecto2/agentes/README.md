@@ -115,3 +115,21 @@ gcloud run deploy kiosco-agentes --image southamerica-west1-docker.pkg.dev/kiosc
 | **Total** | **67/70** | **66/70** |
 
 C-011, A-005 y A-008 pasan a correctas (A-008 ya era un error del juez en v1). Las 4 incorrectas de v2 son de normativa o "ninguna", un camino que no se tocó (la recuperación de `buscar_normativa` es la misma y da el mismo texto en repeticiones; cambia cómo el modelo lo interpreta entre corridas): N-021 (no confirma que la prohibición alcance a los puntos de acceso), N-038 (invierte la diferencia entre kiosco tipo A y B; el texto de la guía, extraído de un PDF con columnas, sale desordenado), N-032 (el juez la marca mal en una corrida, pero en otra el modelo sí contradijo la excepción) y T-005 (la respuesta no inventa el sello específico y el juez la marca incorrecta por citar los sellos posibles; es un falso negativo del juez). La variación de 1 a 3 preguntas entre corridas es ruido del modelo, no efecto de este cambio.
+
+### Corrida v3 y resumen de las 3 corridas (10 nov, con el código final)
+
+La v3 usa el código desplegado: búsqueda híbrida del catálogo y herramientas en hilos. Misma configuración en las tres: `gpt-5.4-mini`, KB de Foundry, 70 preguntas, calificación con un LLM juez y revisión manual de las incorrectas.
+
+| Corrida | Qué cambió | Normativa | Catálogo | Ambas | Ninguna | Total (juez) |
+|---|---|---|---|---|---|---|
+| v1 | Código del 9 nov | 40/40 | 15/16 | 6/8 | 6/6 | 67/70 = 95,7 % (68/70 revisando a mano) |
+| v2 | + búsqueda híbrida del catálogo | 37/40 | 16/16 | 8/8 | 5/6 | 66/70 = 94,3 % |
+| v3 | + herramientas en hilos | 38/40 | 16/16 | 7/8 | 6/6 | 67/70 = 95,7 % |
+
+- **El catálogo mejora de forma estable** (15/16 → 16/16 en v2 y v3): la búsqueda híbrida corrige C-011 y A-005 cuando se pide el nombre exacto.
+- **Las diferencias de normativa son variación del modelo**, no del código: `buscar_normativa` devuelve el mismo texto en cada corrida y la respuesta cambia entre ejecuciones. El acierto total se mueve entre 94 y 96 %, es decir, ±1 o 2 preguntas.
+- **Fallas reales en v3, revisadas a mano:**
+  - **N-021** (la prohibición, ¿aplica también a los puntos de acceso?): responde que solo dentro del colegio. Falla también en v2.
+  - **N-032** (frutos secos naturales y sello): abre con "Sí" y recién después aclara que no deberían llevar sello. Respuesta confusa.
+  - **A-005** (Manjar Río Bueno): ahora sí encuentra el producto, pero concluye que "solo podría venderse si no supera los límites", cuando con sello probable no se puede vender. El error pasó de la búsqueda al razonamiento del agente.
+- Con la fórmula del enunciado (acierto ≤ 95 % para que no sea trivial) estas 70 preguntas quedan justo en el borde. El golden set de 300 necesita más preguntas difíciles.
