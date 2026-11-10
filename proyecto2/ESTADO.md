@@ -22,7 +22,7 @@
 | Modelo desplegado en Foundry | hecho (Benjamín) | 9 nov: deployment `gpt-5.4-mini` (Estándar global, East US), API v1. Conectado a los agentes |
 | Corridas de evaluación (2 o 3) | por hacer (Fernanda) | necesita las KB listas |
 | Informe PDF del 10 nov | por hacer (Fernanda) | necesita capturas de Benjamín |
-| Agentes ADK en Cloud Run | en curso (Max) | 9 nov: 6 agentes en 3 niveles, logs, reintento/respaldo y servidor en `agentes/`. **9 nov, noche: funcionando con `gpt-5.4-mini` de Foundry + KB de Foundry**, Gemini como respaldo (probado: límites por etapa, venta de producto, registro de cámara). Falta: conectar la app Flask y desplegar en Cloud Run |
+| Agentes ADK en Cloud Run | en curso (Max) | 9 nov: 6 agentes en 3 niveles, logs, reintento/respaldo y servidor en `agentes/`. **9 nov, noche: funcionando con `gpt-5.4-mini` de Foundry + KB de Foundry**, Gemini como respaldo (probado: límites por etapa, venta de producto, registro de cámara). 9 nov, noche: **app del kiosco conectada** (`app_kiosco/`, con la pausa del modo continuo; probada con fotos, chat y resumen, y con respaldo local si los agentes no responden). Falta: desplegar en Cloud Run |
 | API de registro + BD | por hacer (Benjamín) | para el 16 nov |
 
 ## Buzón de Benjamín
@@ -32,6 +32,8 @@
 - [ ] (Max, para 10 nov) Crear `kb-normativa` y `kb-catalogo` con los archivos de `proyecto2/knowledge/` (pasos en su README).
 - [ ] (Fernanda, para 10 nov) Capturas de la creación y configuración de las KB en `informe/capturas/`, y avisarle cuando las KB estén listas.
 - [ ] (Max, 9 nov, para 16 nov) Al crear Key Vault, usar los **nombres de secretos de la sección 4.5** de `INSTRUCCIONES_GRUPO.md` (el código de los agentes los lee así). Pasarme por el grupo los valores no secretos: URL del Key Vault, endpoint y nombre del deployment, versión de API, endpoint de búsqueda de las KB.
+
+- [ ] (Max, 9 nov, para 16 nov) En la API de registro (4.3), **guardar el `veredicto` que llega, sin recalcularlo desde `sellos`**: si la cámara ve un sello pero no puede leer el nutriente, llega `veredicto: NO_APTO` con `sellos: []`. Validar solo que `veredicto` sea APTO o NO_APTO.
 
 ## Buzón de Fernanda
 
@@ -46,6 +48,8 @@
 ## Cambios de contrato pendientes
 
 - 9 nov (Max): **nuevo 4.5, nombres de secretos en Key Vault** (`azure-openai-api-key`, `foundry-search-api-key`, `registro-api-key`, `gemini-api-key`). Pendiente que Benjamín lo confirme o proponga otros nombres.
+
+- 9 nov (Max): **4.3, `NO_APTO` puede venir con `sellos` vacía** (sello visto por la cámara pero ilegible). No cambia ningún campo, solo la validación. Pendiente que Benjamín lo confirme.
 
 ## Decisiones tomadas
 

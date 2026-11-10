@@ -14,3 +14,6 @@ __pycache__/
 
 # Resultados crudos de corridas grandes (subir solo los resúmenes)
 evaluacion/corridas/*.raw.jsonl
+
+# Historial local de escaneos de la app del kiosco (dato generado en cada equipo)
+app_kiosco/historial.db

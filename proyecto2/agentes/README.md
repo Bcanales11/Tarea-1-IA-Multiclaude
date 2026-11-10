@@ -27,6 +27,7 @@ Nivel 2    ├── agente_normativo ....... buscar_normativa  → kb-normativa
 | `kiosco_agentes/secretos.py` | Carga de claves desde Azure Key Vault |
 | `servidor.py` | Servidor para Cloud Run (`/salud`, `/consulta`) |
 | `probar.py` | Probar desde la terminal, una pregunta o un lote |
+| `../app_kiosco/` | La app Flask del kiosco que consume `/consulta` (ver su README) |
 
 ## Requisitos del enunciado y dónde se cumplen
 
@@ -89,5 +90,6 @@ Región `southamerica-west1` (Santiago): menor latencia para los colegios. La IP
 ## Limitaciones conocidas
 
 - La búsqueda local es léxica (BM25): recupera el dato clave en 33 de 40 preguntas de normativa. La de Foundry debería ser mejor (semántica).
+- **El respaldo con Gemini en plan gratuito tiene cupo diario.** El 9 nov, una corrida de las 70 preguntas solo con Gemini lo agotó después de 2 preguntas, y las 68 restantes recibieron la respuesta controlada de error (sin caídas). En producción el respaldo debe ir en plan de pago o con otro deployment de Azure en otra región.
 - Las sesiones del servidor están en memoria: si Cloud Run reinicia la instancia, se pierde el historial de la conversación (no los chequeos, que van a la BD).
 - La ruta y la versión de la API de knowledge bases de Foundry (`_buscar_foundry`) se confirman cuando estén creadas.
