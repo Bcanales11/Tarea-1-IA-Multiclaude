@@ -1,0 +1,16 @@
+# Secretos: NUNCA al repo (el repo es público). Van en .env local y en Azure Key Vault.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+local.settings.json
+secrets.json
+
+# Entornos y caché de Python
+.venv/
+venv/
+__pycache__/
+
+# Resultados crudos de corridas grandes (subir solo los resúmenes)
+evaluacion/corridas/*.raw.jsonl
