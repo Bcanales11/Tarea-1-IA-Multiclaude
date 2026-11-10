@@ -1,6 +1,6 @@
 # Instrucciones de trabajo — Proyecto 2, Grupo 19 (Kiosco Escolar Saludable)
 
-> **Para tu Claude:** lee este archivo completo y después `CONTEXTO_PROYECTO.md`, que trae los enunciados, los requisitos y la corrección del Proyecto 1. Pregúntame quién soy (Benjamín, Fernanda o Max) y trabaja solo en mis tareas, dentro de mi carpeta y mi rama. Antes de cambiar algo que toque la parte de otro (sección 4), avísame para que lo acordemos en el grupo.
+> **Para tu Claude:** lee este archivo completo y después `CONTEXTO_PROYECTO.md`, que trae los enunciados, los requisitos y la corrección del Proyecto 1. Pregúntame quién soy (Benjamín, Fernanda o Max) y trabaja solo en mis tareas, dentro de mi carpeta y mi rama. Antes de cambiar algo que toque la parte de otro (sección 4), avísame para que lo acordemos en el grupo. **Al empezar cada sesión** haz `git pull origin main` y lee `ESTADO.md` (buzón y estado del grupo); **al terminar**, actualízalo con cambios puntuales.
 
 Actualizado: 9 de noviembre de 2026.
 
@@ -76,6 +76,7 @@ Si `proyecto2/` todavía no existe en `main`, créala en tu rama con solo tu car
 3. **🔒 El repositorio es PÚBLICO.** Nunca subas claves, tokens, connection strings ni endpoints con key. Van en `.env` (excluido en `.gitignore`) y en **Azure Key Vault**. Sube un `.env.example` con los nombres de las variables y sin valores. Antes de cada commit, revisa `git diff --staged`.
 4. Commits, comentarios y textos en **español**.
 5. Si cambias un contrato de la sección 4, avisa en el grupo **antes** de subirlo.
+6. **`ESTADO.md` es el buzón compartido** (`proyecto2/ESTADO.md`). Lo lees al empezar y lo actualizas al terminar cada sesión, con cambios puntuales (lo editamos los tres; nunca lo sobrescribas entero). Es la única excepción a "solo tu carpeta": cada uno escribe en su sección y en las líneas que pide a otros.
 
 ## 4. Contratos entre las partes (propuesta, ajustar en el grupo)
 
@@ -146,6 +147,19 @@ Un archivo JSONL en `proyecto2/evaluacion/`, una línea por caso:
 - `kb` ∈ `normativa | catalogo | ambas | ninguna`. Usa `ninguna` para las **preguntas trampa**, cuya respuesta correcta es "no lo sé".
 - Mañana se entregan unas **70**. Para el 16 se amplía a **300 o más**.
 - Requisitos del golden set: accuracy **≤ 95 %**, y en **3 corridas** al menos **2 % distintos**.
+
+### 4.5 Secretos en Azure Key Vault (los crea Benjamín, los lee el código de Max)
+
+Agregado el 9 nov. Los agentes leen estos nombres exactos (`agentes/kiosco_agentes/secretos.py`):
+
+| Nombre del secreto en Key Vault | Qué es |
+|---|---|
+| `azure-openai-api-key` | Key del deployment del modelo en Foundry |
+| `foundry-search-api-key` | Key para consultar las knowledge bases |
+| `registro-api-key` | Key de la API de registro (el `x-api-key` de §4.3) |
+| `gemini-api-key` | Key de Gemini (la carga Max) |
+
+Además, Max necesita estos valores, **que no son secretos** y pueden ir por el grupo: la URL del Key Vault, el endpoint y el nombre del deployment del modelo, la versión de API, el endpoint de búsqueda de las knowledge bases y la URL de la API de registro.
 
 ## 5. Tareas por persona
 
