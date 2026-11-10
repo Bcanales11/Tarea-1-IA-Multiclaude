@@ -2,7 +2,7 @@
 
 > **Para tu Claude:** lee este archivo **al empezar cada sesión** (después de `git pull origin main`) y **al terminar** actualízalo con cambios puntuales: no lo sobrescribas entero, porque lo editamos los tres. Fecha en cada línea nueva. Si algo no está claro, pregúntale a tu persona antes de escribir aquí a nombre de otro.
 
-Última actualización: 9 nov 2026 (armado inicial, Max; agentes y §4.5, Max).
+Última actualización: 9 nov 2026 (armado inicial, Max; agentes y §4.5, Max; modelo de Foundry y catálogo dividido, Max).
 
 ## Cómo usarlo
 
@@ -15,19 +15,20 @@
 
 | Entrega | Estado | Notas |
 |---|---|---|
-| `kb-catalogo` (archivos fuente) | hecho (Max) | `knowledge/kb-catalogo/`, 14 archivos |
+| `kb-catalogo` (archivos fuente) | hecho (Max; Benjamín lo dividió) | `knowledge/kb-catalogo/`, 44 archivos de ≤ 40 productos (9 nov, PR #3: con 14 archivos 8 superaban el límite de 8.000 tokens del embedding) |
 | `kb-normativa` (archivos fuente) | hecho (Max) | `knowledge/kb-normativa/`, 3 archivos |
 | Borrador de 70 preguntas | hecho (Max) | `evaluacion/preguntas_v1.jsonl` y `.csv` |
-| KB en Azure Foundry | por hacer (Benjamín) | cierre 10 nov, 23:59 |
-| Modelo desplegado en Foundry | por hacer (Benjamín) | desbloquea a Max |
+| KB en Azure Foundry | en curso (Benjamín) | 9 nov: `kb-normativa` lista; `kb-catalogo` cargando (44 archivos). Cierre 10 nov, 23:59 |
+| Modelo desplegado en Foundry | hecho (Benjamín) | 9 nov: deployment `gpt-5.4-mini` (Estándar global, East US). Falta pasarle a Max el **endpoint del proyecto** y la versión de API |
 | Corridas de evaluación (2 o 3) | por hacer (Fernanda) | necesita las KB listas |
 | Informe PDF del 10 nov | por hacer (Fernanda) | necesita capturas de Benjamín |
-| Agentes ADK en Cloud Run | en curso (Max) | 9 nov: 6 agentes en 3 niveles, logs, reintento/respaldo y servidor listos en `agentes/` (modo local). Falta: API key de Gemini para probar con modelo real, datos de Foundry y desplegar en Cloud Run |
+| Agentes ADK en Cloud Run | en curso (Max) | 9 nov: 6 agentes en 3 niveles, logs, reintento/respaldo y servidor en `agentes/`. **Probados con Gemini real** (límites, venta de producto, registro de cámara, pregunta trampa). Falta: conectar `gpt-5.4-mini` de Foundry (endpoint + key), KB de Foundry y desplegar en Cloud Run |
 | API de registro + BD | por hacer (Benjamín) | para el 16 nov |
 
 ## Buzón de Benjamín
 
-- [ ] (Max, para 10 nov) Averiguar qué modelos de chat permite la suscripción del curso, desplegar uno y pasarme **nombre del deployment y endpoint**. Las keys por mensaje privado, nunca al repo.
+- [ ] (Max, para 10 nov) Averiguar qué modelos de chat permite la suscripción del curso, desplegar uno y pasarme **nombre del deployment y endpoint**. Las keys por mensaje privado, nunca al repo. → 9 nov: deployment `gpt-5.4-mini` recibido. **Falta el endpoint** (en el mensaje quedó "[PEGAR AQUÍ]"), la versión de API y la key por privado.
+- [ ] (Max, 9 nov, para 10 nov) Cuando `kb-catalogo` y `kb-normativa` estén listas en Foundry, pasarme el **endpoint de búsqueda** (Azure AI Search) y la versión de API, para conectar los agentes a las KB de Foundry. Key por privado.
 - [ ] (Max, para 10 nov) Crear `kb-normativa` y `kb-catalogo` con los archivos de `proyecto2/knowledge/` (pasos en su README).
 - [ ] (Fernanda, para 10 nov) Capturas de la creación y configuración de las KB en `informe/capturas/`, y avisarle cuando las KB estén listas.
 - [ ] (Max, 9 nov, para 16 nov) Al crear Key Vault, usar los **nombres de secretos de la sección 4.5** de `INSTRUCCIONES_GRUPO.md` (el código de los agentes los lee así). Pasarme por el grupo los valores no secretos: URL del Key Vault, endpoint y nombre del deployment, versión de API, endpoint de búsqueda de las KB.
