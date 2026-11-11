@@ -289,3 +289,41 @@ def test_log_json_de_cada_peticion(cliente, caplog):
     peticion = eventos(caplog, "peticion")[-1]
     assert peticion.datos["estado"] == 201 and peticion.datos["ruta"] == "/chequeos"
     assert eventos(caplog, "chequeo_guardado")
+
+
+# --- Lectura de secretos desde Key Vault (identidad administrada) ---------------------------------
+def test_key_vault_sin_url_no_hace_nada(monkeypatch):
+    from app import config
+    monkeypatch.delenv("KEY_VAULT_URL", raising=False)
+    monkeypatch.delenv("REGISTRO_API_KEY", raising=False)
+    config.cargar_secretos_key_vault()
+    import os
+    assert "REGISTRO_API_KEY" not in os.environ
+
+
+def test_key_vault_carga_los_dos_secretos_sin_pisar_los_existentes(monkeypatch):
+    import os
+    import sys
+    import types
+    from app import config
+
+    class FalsoSecreto:
+        def __init__(self, valor): self.value = valor
+
+    class FalsoCliente:
+        def __init__(self, vault_url, credential, **kwargs): self.url = vault_url
+        def get_secret(self, nombre): return FalsoSecreto(f"valor-de-{nombre}")
+
+    ident = types.ModuleType("azure.identity"); ident.ManagedIdentityCredential = lambda client_id=None: ("mi", client_id)
+    kv = types.ModuleType("azure.keyvault.secrets"); kv.SecretClient = FalsoCliente
+    for nombre, mod in {"azure": types.ModuleType("azure"), "azure.identity": ident,
+                        "azure.keyvault": types.ModuleType("azure.keyvault"), "azure.keyvault.secrets": kv}.items():
+        monkeypatch.setitem(sys.modules, nombre, mod)
+    monkeypatch.setenv("KEY_VAULT_URL", "https://kv-prueba.vault.azure.net/")
+    monkeypatch.setenv("AZURE_CLIENT_ID", "id-de-prueba")
+    monkeypatch.delenv("REGISTRO_API_KEY", raising=False)
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///ya-definida.db")
+    config.cargar_secretos_key_vault()
+    assert os.environ["REGISTRO_API_KEY"] == "valor-de-registro-api-key"
+    assert os.environ["DATABASE_URL"] == "sqlite:///ya-definida.db"  # no se pisa
+    monkeypatch.delenv("REGISTRO_API_KEY", raising=False)

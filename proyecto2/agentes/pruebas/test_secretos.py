@@ -18,6 +18,7 @@ VARIABLES = ["KEY_VAULT_URL", "AZURE_TENANT_ID", "AZURE_CLIENT_ID", "AZURE_CLIEN
 def entorno_limpio(monkeypatch):
     for v in VARIABLES:
         monkeypatch.delenv(v, raising=False)
+    monkeypatch.setattr(secretos, "PAUSA_ENTRE_INTENTOS_S", 0)  # sin esperas reales en los tests
     yield
 
 
@@ -31,7 +32,7 @@ def _cliente_falso(registro, fallos=None):
     fallos = fallos or {}
 
     class Cliente:
-        def __init__(self, vault_url, credential):
+        def __init__(self, vault_url, credential, **kw):
             registro["vault_url"] = vault_url
             registro["credencial"] = credential
 
@@ -96,7 +97,8 @@ def test_federacion_usa_client_assertion_con_token_de_google(monkeypatch):
     assert cred._func() == "token-id-de-google"  # noqa: SLF001
     p = pedidos_metadata[0]
     assert p.full_url.startswith(secretos.URL_IDENTIDAD_METADATA)
-    assert "audience=api://AzureADTokenExchange" in p.full_url
+    assert "audience=api%3A%2F%2FAzureADTokenExchange" in p.full_url  # codificada en la URL
+    assert "/service-accounts/default/identity" in p.full_url  # ruta correcta del servidor de metadatos
     assert p.get_header("Metadata-flavor") == "Google"
 
 
@@ -153,7 +155,8 @@ def test_falla_de_autenticacion_corta_y_no_lanza(monkeypatch):
     monkeypatch.setattr("azure.identity.DefaultAzureCredential", lambda: object())
 
     resumen = secretos.cargar_desde_key_vault()
-    assert registro["pedidos"] == [primero]  # no insiste con los demás
+    # Reintenta el mismo secreto (la credencial federada tarda en propagarse) pero no insiste con los demás
+    assert registro["pedidos"] == [primero] * secretos.INTENTOS_CARGA
     assert resumen["error"] == "ClientAuthenticationError"
     assert sorted(resumen["fallidos"]) == sorted(secretos.SECRETOS)
 
@@ -168,3 +171,41 @@ def test_resumen_y_logs_no_incluyen_valores(monkeypatch, caplog):
     assert "valor-" not in str(resumen)
     assert "valor-" not in caplog.text
     assert "default_azure_credential" in caplog.text
+
+
+def test_error_de_identidad_registra_codigo_aadsts(monkeypatch):
+    monkeypatch.setenv("KEY_VAULT_URL", "https://kv-prueba.vault.azure.net/")
+    registro = {}
+    primero = next(iter(secretos.SECRETOS))
+    fallos = {primero: ClientAuthenticationError("AADSTS70021: No matching federated identity record")}
+    monkeypatch.setattr("azure.keyvault.secrets.SecretClient", _cliente_falso(registro, fallos))
+    monkeypatch.setattr("azure.identity.DefaultAzureCredential", lambda: object())
+    resumen = secretos.cargar_desde_key_vault()
+    assert resumen["aadsts"] == "AADSTS70021"
+
+
+def test_error_de_red_se_reintenta_y_luego_se_carga(monkeypatch):
+    """Un fallo transitorio (NAT en frío, DNS) no debe dejar al servicio sin claves de por vida."""
+    monkeypatch.setenv("KEY_VAULT_URL", "https://kv-prueba.vault.azure.net/")
+    registro = {}
+    intentos = {"n": 0}
+
+    class ServiceRequestError(Exception):
+        pass
+
+    class Cliente:
+        def __init__(self, vault_url, credential, **kw):
+            pass
+
+        def get_secret(self, nombre):
+            intentos["n"] += 1
+            if intentos["n"] == 1:
+                raise ServiceRequestError("timeout")
+            registro.setdefault("pedidos", []).append(nombre)
+            return _Secreto(f"valor-{nombre}")
+
+    monkeypatch.setattr("azure.keyvault.secrets.SecretClient", Cliente)
+    monkeypatch.setattr("azure.identity.DefaultAzureCredential", lambda: object())
+    resumen = secretos.cargar_desde_key_vault()
+    assert sorted(resumen["cargados"]) == sorted(secretos.SECRETOS)
+    assert resumen["fallidos"] == []

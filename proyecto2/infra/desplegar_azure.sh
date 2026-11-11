@@ -103,7 +103,8 @@ regla() {
 }
 
 for nsg in "$NSG_API" "$NSG_DB" "$NSG_PE"; do
-  az network nsg create -g "$RG" -n "$nsg" -l "$UBICACION" --tags "${TAGS[@]}" -o none
+  az network nsg show -g "$RG" -n "$nsg" -o none 2>/dev/null \
+    || az network nsg create -g "$RG" -n "$nsg" -l "$UBICACION" --tags "${TAGS[@]}" -o none
 done
 
 # --- snet-api (Container Apps) ---
@@ -252,9 +253,20 @@ if ! az network private-dns link vnet show -g "$RG" --zone-name "$ZONA_DNS_KV" -
   az network private-dns link vnet create -g "$RG" --zone-name "$ZONA_DNS_KV" -n "enlace-$VNET" \
     --virtual-network "$VNET_ID" --registration-enabled false -o none
 fi
+ZONA_KV_ID="$(azv network private-dns zone show -g "$RG" -n "$ZONA_DNS_KV" --query id -o tsv)"
 if ! az network private-endpoint dns-zone-group show -g "$RG" --endpoint-name "$PE_KV" -n kv-zona -o none 2>/dev/null; then
   az network private-endpoint dns-zone-group create -g "$RG" --endpoint-name "$PE_KV" -n kv-zona \
-    --private-dns-zone "$ZONA_DNS_KV" --zone-name vault -o none
+    --private-dns-zone "$ZONA_KV_ID" --zone-name vault -o none \
+    || aviso "no se pudo crear el dns-zone-group; se crea el registro A a mano"
+fi
+# Sin el registro A, la API no resuelve Key Vault dentro de la VNet y no arranca (visto el 10 nov:
+# la zona quedó vacía). Se verifica y, si falta, se crea a mano con la IP del private endpoint.
+IP_PE_KV="$(azv network private-endpoint show -g "$RG" -n "$PE_KV" --query 'customDnsConfigs[0].ipAddresses[0]' -o tsv)"
+n_reg="$(azv network private-dns record-set a show -g "$RG" -z "$ZONA_DNS_KV" -n "$KV_NOMBRE" --query 'length(aRecords)' -o tsv 2>/dev/null || echo 0)"
+if [[ "$n_reg" == "0" || -z "$n_reg" ]]; then
+  [[ -n "$IP_PE_KV" ]] || error "el private endpoint no informa su IP"
+  az network private-dns record-set a add-record -g "$RG" -z "$ZONA_DNS_KV" -n "$KV_NOMBRE" -a "$IP_PE_KV" -o none
+  info "registro A $KV_NOMBRE -> $IP_PE_KV creado a mano en $ZONA_DNS_KV"
 fi
 
 # ---------------------------------------------------------------------------------------------
@@ -279,13 +291,24 @@ url_bd() {  # url_bd <clave> -> postgresql://...
 }
 nueva_clave_bd() { printf 'Kg19-%s-Zx' "$(aleatorio_hex 20)"; }   # mayúsculas, minúsculas, dígitos y '-'
 
+# Zona DNS privada y su enlace con la VNet, creados aquí. Azure (CLI 2.92) rechaza el nombre de una
+# zona que no existe ("PrivateDnsZoneNameNotValid"); con una zona ya creada y pasada por ID, sí la acepta.
+if ! az network private-dns zone show -g "$RG" -n "$ZONA_DNS_PG" -o none 2>/dev/null; then
+  az network private-dns zone create -g "$RG" -n "$ZONA_DNS_PG" -o none
+fi
+if ! az network private-dns link vnet show -g "$RG" --zone-name "$ZONA_DNS_PG" -n "enlace-$VNET-pg" -o none 2>/dev/null; then
+  az network private-dns link vnet create -g "$RG" --zone-name "$ZONA_DNS_PG" -n "enlace-$VNET-pg" \
+    --virtual-network "$VNET_ID" --registration-enabled false -o none
+fi
+ZONA_PG_ID="$(azv network private-dns zone show -g "$RG" -n "$ZONA_DNS_PG" --query id -o tsv)"
+
 if ! az postgres flexible-server show -g "$RG" -n "$PG_NOMBRE" -o none 2>/dev/null; then
   info "creando el servidor (tarda 5-15 minutos)"
   PG_CLAVE="$(nueva_clave_bd)"
   az postgres flexible-server create -g "$RG" -n "$PG_NOMBRE" -l "$UBICACION" \
     --tier Burstable --sku-name "$PG_SKU" --storage-size "$PG_ALMACENAMIENTO_GB" --version "$PG_VERSION" \
     --admin-user "$PG_ADMIN" --admin-password "$PG_CLAVE" \
-    --vnet "$VNET" --subnet "$SNET_DB" --private-dns-zone "$ZONA_DNS_PG" \
+    --vnet "$VNET" --subnet "$SNET_DB" --private-dns-zone "$ZONA_PG_ID" \
     --backup-retention 7 \
     --tags "${TAGS[@]}" --yes -o none \
     || error "no se pudo crear PostgreSQL (si la región está restringida para tu suscripción, ver README: plan B de región)"
@@ -300,8 +323,8 @@ elif ! secreto_existe "$SECRETO_DB_URL"; then
 else
   info "ya existe, y su URL ya está en Key Vault"
 fi
-if ! az postgres flexible-server db show -g "$RG" -s "$PG_NOMBRE" -d "$PG_BD" -o none 2>/dev/null; then
-  az postgres flexible-server db create -g "$RG" -s "$PG_NOMBRE" -d "$PG_BD" -o none
+if ! az postgres flexible-server db show -g "$RG" --server-name "$PG_NOMBRE" --name "$PG_BD" -o none 2>/dev/null; then
+  az postgres flexible-server db create -g "$RG" --server-name "$PG_NOMBRE" --name "$PG_BD" -o none
 fi
 
 # ---------------------------------------------------------------------------------------------
@@ -323,8 +346,29 @@ if [[ "$USAR_DOCKER_LOCAL" == "true" ]]; then
   docker push "$IMAGEN_COMPLETA"
 else
   info "construyendo en Azure con az acr build (sube solo lo que no excluye .dockerignore)"
-  az acr build -r "$ACR_NOMBRE" -t "$IMAGEN:$ETIQUETA_IMAGEN" "$(ruta_nativa "$DIR_API")" \
+  # --no-logs: en Windows la CLI se cae al mostrar el log en vivo (UnicodeEncodeError cp1252). Se
+  # encola la construcción y se consulta su estado; el log completo queda en `az acr task logs`.
+  RUN_PREVIO="$(azv acr task list-runs -r "$ACR_NOMBRE" --top 1 --query "[0].runId" -o tsv 2>/dev/null || true)"
+  az acr build -r "$ACR_NOMBRE" -t "$IMAGEN:$ETIQUETA_IMAGEN" --no-logs --no-wait "$(ruta_nativa "$DIR_API")" -o none \
     || error "az acr build falló. Si dice que ACR Tasks no está disponible en tu suscripción: USAR_DOCKER_LOCAL=true bash desplegar_azure.sh"
+  info "esperando la construcción de la imagen (1-4 minutos)"
+  estado_build=""
+  for _ in $(seq 1 60); do
+    sleep 10
+    # La imagen existe de verdad cuando su etiqueta aparece en el repositorio (el "último build" puede
+    # ser uno anterior y dar por buena una imagen que aún no existe).
+    if azv acr repository show-tags -n "$ACR_NOMBRE" --repository "$IMAGEN" -o tsv 2>/dev/null | grep -qx "$ETIQUETA_IMAGEN"; then
+      estado_build=Succeeded; break
+    fi
+    # Una falla solo se considera si es de una corrida distinta de la anterior
+    ultima="$(azv acr task list-runs -r "$ACR_NOMBRE" --top 1 --query "[0].[runId,status]" -o tsv 2>/dev/null || true)"
+    read -r id_run est_run <<< "$ultima"
+    if [[ -n "${id_run:-}" && "${id_run:-}" != "$RUN_PREVIO" ]]; then
+      case "${est_run:-}" in Failed|Canceled|Error|Timeout) estado_build="$est_run"; break ;; esac
+    fi
+  done
+  [[ "$estado_build" == "Succeeded" ]] || error "la construcción de la imagen terminó en estado '$estado_build'. Log: az acr task logs -r $ACR_NOMBRE"
+  info "imagen construida: $IMAGEN_COMPLETA"
 fi
 
 # ---------------------------------------------------------------------------------------------
@@ -335,6 +379,7 @@ if ! az identity show -g "$RG" -n "$IDENTIDAD" -o none 2>/dev/null; then
 fi
 ID_RECURSO="$(azv identity show -g "$RG" -n "$IDENTIDAD" --query id -o tsv)"
 ID_PRINCIPAL="$(azv identity show -g "$RG" -n "$IDENTIDAD" --query principalId -o tsv)"
+ID_CLIENTE="$(azv identity show -g "$RG" -n "$IDENTIDAD" --query clientId -o tsv)"
 asignar_rol "$ID_PRINCIPAL" ServicePrincipal AcrPull "$ACR_ID"
 # Solo los 2 secretos que usa la API (no puede leer las claves de Foundry ni de Gemini)
 asignar_rol "$ID_PRINCIPAL" ServicePrincipal "Key Vault Secrets User" "$KV_ID/secrets/$SECRETO_API_KEY"
@@ -355,18 +400,26 @@ if ! az containerapp env show -g "$RG" -n "$CAE_NOMBRE" -o none 2>/dev/null; the
 fi
 
 desplegar_app() {
+  local estado_app
+  estado_app="$(azv containerapp show -g "$RG" -n "$CA_NOMBRE" --query properties.provisioningState -o tsv 2>/dev/null || true)"
+  if [[ "$estado_app" == "Failed" ]]; then
+    aviso "la app quedó en estado Failed; se elimina y se vuelve a crear (es solo nuestra app)"
+    az containerapp delete -g "$RG" -n "$CA_NOMBRE" --yes -o none || return 1
+  fi
   if az containerapp show -g "$RG" -n "$CA_NOMBRE" -o none 2>/dev/null; then
     az containerapp update -g "$RG" -n "$CA_NOMBRE" --image "$IMAGEN_COMPLETA" \
+      --set-env-vars "KEY_VAULT_URL=${KV_URI%/}" "AZURE_CLIENT_ID=$ID_CLIENTE" \
       --min-replicas "$MIN_REPLICAS" --max-replicas "$MAX_REPLICAS" -o none
   else
-    # Los secretos son referencias a Key Vault: el valor nunca pasa por este script.
+    # Sin secretos aquí: la API lee `registro-api-key` y `registro-database-url` de Key Vault al
+    # arrancar, con su identidad administrada y por el private endpoint (KEY_VAULT_URL +
+    # AZURE_CLIENT_ID). Las "secret references" de Container Apps fallaron el 10 nov porque la
+    # plataforma las resuelve fuera de la VNet y el firewall de Key Vault las rechaza.
     az containerapp create -g "$RG" -n "$CA_NOMBRE" --environment "$CAE_NOMBRE" \
       --workload-profile-name Consumption \
       --image "$IMAGEN_COMPLETA" --registry-server "$ACR_SERVIDOR" --registry-identity "$ID_RECURSO" \
       --user-assigned "$ID_RECURSO" \
-      --secrets "api-key=keyvaultref:${KV_URI}secrets/$SECRETO_API_KEY,identityref:$ID_RECURSO" \
-                "database-url=keyvaultref:${KV_URI}secrets/$SECRETO_DB_URL,identityref:$ID_RECURSO" \
-      --env-vars "REGISTRO_API_KEY=secretref:api-key" "DATABASE_URL=secretref:database-url" \
+      --env-vars "KEY_VAULT_URL=${KV_URI%/}" "AZURE_CLIENT_ID=$ID_CLIENTE" \
                  "ZONA_HORARIA=America/Santiago" "NIVEL_LOG=INFO" \
       --ingress external --target-port 8000 --transport auto \
       --cpu 0.25 --memory 0.5Gi --min-replicas "$MIN_REPLICAS" --max-replicas "$MAX_REPLICAS" \
@@ -382,9 +435,10 @@ nombres_regla=(cloud-run colegio admin)
 ips_regla=("$IP_SALIDA_CLOUD_RUN" "$IP_COLEGIO" "$IP_ADMIN")
 for i in 0 1 2; do
   [[ -n "${ips_regla[$i]}" ]] || continue
-  az containerapp ingress access-restriction set -g "$RG" -n "$CA_NOMBRE" \
+  reintentar 4 20 az containerapp ingress access-restriction set -g "$RG" -n "$CA_NOMBRE" \
     --rule-name "${nombres_regla[$i]}" --ip-address "${ips_regla[$i]}/32" --action Allow \
-    --description "Acceso ${nombres_regla[$i]}" -o none
+    --description "Acceso ${nombres_regla[$i]}" -o none \
+    || error "no se pudo aplicar la regla ${nombres_regla[$i]} al ingress"
   info "permitido ${nombres_regla[$i]}: ${ips_regla[$i]}"
 done
 

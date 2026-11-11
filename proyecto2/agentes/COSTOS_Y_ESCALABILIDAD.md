@@ -315,3 +315,29 @@ Base: en el P1 todo corrió en un Apple M3 con 8 GB de memoria unificada, con el
 - Tamaño real de la API (vCPU, memoria y réplicas mínimas) y si la BD usa private endpoint o integración de red (Benjamín, en `../infra/`).
 - Cómo cuenta Google las instancias de Cloud Run que usan el NAT con Direct VPC egress: aquí se tomó la cota alta (`max-instances`).
 - Los totales de la sección 4 siguen sin IVA ni Cloud Build. Esta sección ya incluye la BD, la API y la red, que antes faltaban (secciones 6 y 7).
+
+## 10. ¿Es justificable el costo para un colegio? (para el informe FINAL del 16 nov)
+
+> **⚠️ Esta sección es para el informe final del Proyecto 2 (lunes 16 nov). NO va en el informe de KB + Evaluation que se entrega HOY (10 nov).**
+
+Pregunta planteada el 10 nov por Max. Responde directamente a lo que el profesor descontó en el P1 (escalabilidad y costos solo conceptuales, −0,8): no basta con dar el costo, hay que decir si se sostiene y para quién. Todas las cifras salen de la sección 9 (estimadas, precio de lista, sin IVA; confirmar en las calculadoras).
+
+**Respuesta corta para el informe:** para **un colegio aislado** es difícil de justificar; para **una red de colegios que comparte la misma plataforma** sí se sostiene.
+
+| Colegios que comparten la plataforma | US$/mes totales | US$/mes por colegio | CLP/mes por colegio (a 979,88) |
+|---|---|---|---|
+| 1 | 141 | 141 | ≈ 138.000 |
+| 10 | 356 | 36 | ≈ 35.000 |
+| 50 | 1.337 | 27 | ≈ 26.200 |
+
+**Por qué un colegio solo sale caro:** más de la mitad es costo fijo que se paga aunque nadie use el sistema. De los US$110,6 fijos, US$73,7 son Azure AI Search Basic (lo que hace funcionar las bases de conocimiento) y US$38,5 son la infraestructura que pide Magíster (red privada con NSG, Key Vault con private endpoint, PostgreSQL privado, registro de contenedores, IP fija). Lo que crece con el uso son los tokens del modelo y el razonamiento de las KB: unos US$24,5 por colegio.
+
+**Por qué compartido sí se sostiene:** la plataforma en la nube es la misma para todos y cada colegio solo agrega su equipo local (cámara y visión). Con 10 colegios el costo por colegio baja a un cuarto, y con 50 tiende a US$24,5. El modelo de negocio natural es un sostenedor, una municipalidad o una red de colegios, no un kiosco suelto.
+
+**Qué se puede bajar en un piloto de un solo colegio (≈ US$122 en vez de 141):** API de registro sin réplica mínima (−5,9, con arranque en frío), base de datos con integración de red virtual en vez de private endpoint (−7,3) y la imagen en un registro gratuito (−5,1). Un nivel más barato de AI Search podría bajar más, **pero no está probado**: habría que medir si el catálogo (44 archivos) y la normativa caben y si la calidad de las respuestas se mantiene. Declararlo como trabajo futuro, no como hecho.
+
+**Costo del equipo del colegio (inversión única, no mensual):** Mac mini M4 16 GB ≈ US$799 más una cámara USB de US$40 a 60; repartido en 36 meses son ≈ US$24 al mes por colegio.
+
+**Qué NO podemos afirmar (decirlo con honestidad):** no tenemos datos del costo de una multa ni del costo de chequear los productos a mano, así que no se puede calcular un ahorro en pesos. El beneficio que sí se puede sostener es cualitativo: queda un **registro auditable** de que cada producto se chequeó, se **evita vender productos con sello "ALTO EN"** prohibidos por la Ley 20.606 en colegios, y el veredicto lo decide una regla fija, no el modelo. Si Fer o Benjamín consiguen un dato real (multa, tiempo de revisión manual), se agrega aquí.
+
+**Comparación con el Proyecto 1 (IA local):** el P1 tenía costo mensual casi nulo (todo corría en el equipo del colegio) pero exigía GPU o memoria unificada de 8 GB y no escalaba a muchos colegios sin administrar cada equipo. El P2 cambia ese costo de hardware por un costo mensual compartido y gana multi-agente, registro central y gestión única.

@@ -76,6 +76,20 @@ def _listar_local(kiosco_id: str, desde: str) -> list[dict]:
     return [dict(f, sellos=json.loads(f["sellos"])) for f in filas]
 
 
+def _enviar(metodo: str, url: str, **kw):
+    """Llama a la API de registro. Un solo reintento, y solo si la conexión no llegó a establecerse
+    (así es seguro también para POST: no puede duplicar un chequeo)."""
+    if not config.REGISTRO_API_KEY:
+        raise RuntimeError("falta REGISTRO_API_KEY (Key Vault no entregó registro-api-key)")
+    cabeceras = {"x-api-key": config.REGISTRO_API_KEY}
+    for intento in (1, 2):
+        try:
+            return httpx.request(metodo, url, headers=cabeceras, timeout=httpx.Timeout(10, connect=15), **kw)
+        except (httpx.ConnectError, httpx.ConnectTimeout):
+            if intento == 2:
+                raise
+
+
 # --- Herramientas que ven los agentes ------------------------------------------------
 
 def guardar_chequeo(producto: str, sellos: list[str], motivo: str, origen: str = "chat",
@@ -105,8 +119,7 @@ def guardar_chequeo(producto: str, sellos: list[str], motivo: str, origen: str =
         }
         dato["veredicto"] = veredicto_por_regla(dato["sellos"], int(sellos_ilegibles or 0))
         if config.REGISTRO_BACKEND == "api":
-            r = httpx.post(f"{config.REGISTRO_API_URL}/chequeos", json=dato,
-                           headers={"x-api-key": config.REGISTRO_API_KEY}, timeout=10)
+            r = _enviar("POST", f"{config.REGISTRO_API_URL}/chequeos", json=dato)
             if r.status_code >= 400:  # el motivo del 422 va en el cuerpo; raise_for_status lo perdería
                 raise RuntimeError(f"API de registro respondió {r.status_code}: {r.text[:300]}")
             resp = r.json()
@@ -131,9 +144,9 @@ def listar_chequeos(kiosco_id: str = "", desde: str = "") -> dict:
     desde = desde or (datetime.now(ZoneInfo("America/Santiago")).date() - timedelta(days=7)).isoformat()
     try:
         if config.REGISTRO_BACKEND == "api":
-            r = httpx.get(f"{config.REGISTRO_API_URL}/chequeos", params={"kiosco_id": kiosco_id, "desde": desde},
-                          headers={"x-api-key": config.REGISTRO_API_KEY}, timeout=10)
-            r.raise_for_status()
+            r = _enviar("GET", f"{config.REGISTRO_API_URL}/chequeos", params={"kiosco_id": kiosco_id, "desde": desde})
+            if r.status_code >= 400:
+                raise RuntimeError(f"API de registro respondió {r.status_code}: {r.text[:300]}")
             chequeos = r.json()
         else:
             chequeos = _listar_local(kiosco_id, desde)

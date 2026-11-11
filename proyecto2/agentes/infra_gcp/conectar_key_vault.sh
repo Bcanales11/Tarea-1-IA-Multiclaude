@@ -46,9 +46,11 @@ g() { "$GCLOUD" "$@" --project "$PROYECTO"; }
 
 # Secretos de Secret Manager que pasan a Key Vault (variable de entorno del servicio).
 # AGENTES_API_KEY se queda en Secret Manager: es la clave que valida /consulta y no está en §4.5.
-# Si se prefiere que el respaldo Gemini no dependa de Azure (si Azure cae, también cae Key Vault),
-# sacar GEMINI_API_KEY de esta lista: secretos.py no la pisa si ya viene de Secret Manager.
-PASAN_A_KEY_VAULT="${PASAN_A_KEY_VAULT:-AZURE_API_KEY,FOUNDRY_SEARCH_API_KEY,GEMINI_API_KEY}"
+# GEMINI_API_KEY se queda en Secret Manager: es el modelo de respaldo y debe sobrevivir a una caída de
+# Azure (si Azure o Key Vault caen, el respaldo seguiría teniendo su clave). Igual se carga en Key
+# Vault (§4.5) pero no se usa desde ahí. Auditoría 11 nov, riesgo R3.
+PASAN_A_KEY_VAULT="${PASAN_A_KEY_VAULT:-AZURE_API_KEY,FOUNDRY_SEARCH_API_KEY}"
+export MSYS_NO_PATHCONV=1   # Git Bash convierte rutas que empiezan con / al pasarlas a gcloud/az
 
 # Revisión actual, para poder volver atrás
 ANTERIOR="$(g run services describe "$SERVICIO" --region "$REGION" --format='value(status.latestReadyRevisionName)' | tr -d '\r')"
@@ -62,7 +64,8 @@ if ! g run services describe "$SERVICIO" --region "$REGION" \
 fi
 
 VARIABLES="KEY_VAULT_URL=${KEY_VAULT_URL},AZURE_TENANT_ID=${AZURE_TENANT_ID},AZURE_CLIENT_ID=${AZURE_CLIENT_ID}"
-VARIABLES+=",REGISTRO_BACKEND=api,REGISTRO_API_URL=${REGISTRO_API_URL}"
+# REGISTRO_BACKEND=api NO va aquí: se activa en la FASE 1b, cuando la API ya responde y su clave se cargó.
+VARIABLES+=",REGISTRO_API_URL=${REGISTRO_API_URL}"
 
 case "$FASE" in
   1)
@@ -72,6 +75,11 @@ case "$FASE" in
       --update-env-vars "$VARIABLES" \
       --remove-env-vars AZURE_CLIENT_SECRET
     ;;
+  1b)
+    echo "== FASE 1b: registro por la API de Azure (solo si el log de la fase 1 mostró cargados: registro-api-key"
+    echo "   y GET \$REGISTRO_API_URL/salud responde 200 desde la IP del admin)"
+    g run services update "$SERVICIO" --region "$REGION" --update-env-vars REGISTRO_BACKEND=api
+    ;;
   2)
     echo "== FASE 2: quitar de Secret Manager lo que ya está en Key Vault: $PASAN_A_KEY_VAULT"
     g run services update "$SERVICIO" --region "$REGION" \
@@ -79,7 +87,7 @@ case "$FASE" in
       --remove-secrets "$PASAN_A_KEY_VAULT"
     ;;
   *)
-    echo "FASE debe ser 1 o 2" >&2; exit 1 ;;
+    echo "FASE debe ser 1, 1b o 2" >&2; exit 1 ;;
 esac
 
 URL="$(g run services describe "$SERVICIO" --region "$REGION" --format='value(status.url)' | tr -d '\r')"
@@ -99,6 +107,8 @@ cat <<EOF
 == Volver atrás
    # a) a la revisión anterior, sin tocar nada más (lo más rápido):
    #    gcloud run services update-traffic $SERVICIO --region $REGION --to-revisions $ANTERIOR=100 --project $PROYECTO
+   #    Después de volver atrás el servicio queda FIJO a esa revisión: las nuevas no reciben tráfico hasta
+   #    correr:  gcloud run services update-traffic $SERVICIO --region $REGION --to-latest --project $PROYECTO
    # b) o deshacer la configuración:
    #    gcloud run services update $SERVICIO --region $REGION --project $PROYECTO \\
    #      --remove-env-vars KEY_VAULT_URL,AZURE_TENANT_ID,AZURE_CLIENT_ID,REGISTRO_API_URL \\

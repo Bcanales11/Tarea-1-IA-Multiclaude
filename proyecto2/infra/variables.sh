@@ -11,7 +11,12 @@ SUSCRIPCION="${SUSCRIPCION:-}"                # vacío = la suscripción activa 
 # destruir.sh borra solo los nuestros, uno por uno, nunca el grupo. La suscripción del curso es
 # compartida por ~80 grupos: nada se crea ni se borra fuera de este grupo.
 RG="${RG:-rg-kiosco-g19}"
-UBICACION="${UBICACION:-eastus}"              # misma región que Foundry (East US)
+# En Windows la CLI de Azure falla al mostrar el log de `az acr build` (UnicodeEncodeError cp1252)
+export PYTHONUTF8=1 PYTHONIOENCODING=utf-8
+# Centro EE. UU.: la suscripción del curso restringe PostgreSQL en East US ("location is restricted")
+# y en East US 2 / West US 3 ("SkuNotAvailable"); Central US y West US 2 sí lo permiten (probado el 10 nov).
+# Foundry y AI Search siguen en East US; la red de la API y la BD no necesitan estar en la misma región.
+UBICACION="${UBICACION:-centralus}"
 ETIQUETAS="${ETIQUETAS:-proyecto=kiosco-saludable grupo=g19 ramo=TICS867}"
 
 # --- Red (requisito Magíster: subredes y NSG) -----------------------------------------
@@ -51,7 +56,7 @@ PG_BD="${PG_BD:-registro}"
 PG_VERSION="${PG_VERSION:-16}"
 PG_SKU="${PG_SKU:-Standard_B1ms}"             # Burstable B1ms: 1 vCore, 2 GiB
 PG_ALMACENAMIENTO_GB="${PG_ALMACENAMIENTO_GB:-32}"
-ZONA_DNS_PG="${PG_NOMBRE}.private.postgres.database.azure.com"
+ZONA_DNS_PG="${ZONA_DNS_PG:-privatelink.postgres.database.azure.com}"   # nombre estándar; Azure rechaza <servidor>.private.postgres...
 
 # --- Contenedores ------------------------------------------------------------------------------
 ACR_NOMBRE="${ACR_NOMBRE:-acrkioscog19}"      # único en todo Azure, solo letras y números
@@ -157,8 +162,18 @@ guardar_secreto() {
   fi
 }
 
+# 0 = existe, 1 = NO existe (SecretNotFound); cualquier otro error (firewall que tarda 1-2 min en aplicar
+# la IP nueva, RBAC sin propagar) se reintenta y, si persiste, detiene el script. Antes un 403 se tomaba
+# por "no existe" y se regeneraba la clave de la API y la contraseña de PostgreSQL (auditoría 11 nov, H2).
 secreto_existe() {
-  az keyvault secret show --vault-name "$KV_NOMBRE" --name "$1" --query id -o none 2>/dev/null
+  local i salida
+  for ((i = 1; i <= 12; i++)); do
+    if salida="$(az keyvault secret show --vault-name "$KV_NOMBRE" --name "$1" --query id -o tsv 2>&1)"; then return 0; fi
+    if grep -qiE 'SecretNotFound|was not found' <<< "$salida"; then return 1; fi
+    aviso "no pude leer $1 de Key Vault (intento $i/12; ¿firewall o rol sin propagar?); reintento en 20s"
+    sleep 20
+  done
+  error "no se pudo comprobar si existe el secreto $1 (¿tu IP está en el firewall de Key Vault?)"
 }
 
 # Genera una cadena aleatoria hexadecimal de N bytes (sin openssl si no está)

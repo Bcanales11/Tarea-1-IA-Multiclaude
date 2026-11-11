@@ -83,3 +83,29 @@ Con un conector Serverless VPC Access en vez de Direct VPC egress se sumarían a
 - **Todo el tráfico de salida pasa por el NAT** (`all-traffic`), incluido Foundry y la búsqueda. Si el NAT falla, los agentes no llegan a Azure. Gemini y Cloud Logging van por acceso privado a Google (la subred tiene Private Google Access), así que el respaldo no depende del NAT.
 - **Gemini en Key Vault:** si se mueve `gemini-api-key` a Key Vault (lo que dice §4.5) y Azure o su firewall fallan, el respaldo también se queda sin clave justo cuando más se necesita. `conectar_key_vault.sh` permite dejarla en Secret Manager con `PASAN_A_KEY_VAULT=AZURE_API_KEY,FOUNDRY_SEARCH_API_KEY`. Decisión pendiente de Max.
 - La IP es regional. Si el servicio se mueve de región, hay que crear otra IP y avisar a Benjamín.
+
+
+## Lo que quedó desplegado el 11 nov (verificado)
+
+Valores **no secretos** (los secretos viven solo en Key Vault y Secret Manager):
+
+| Qué | Valor |
+|---|---|
+| IP fija de salida de Cloud Run (Cloud NAT) | `34.176.92.112` |
+| `KEY_VAULT_URL` | `https://kv-kiosco-g19.vault.azure.net` |
+| `AZURE_TENANT_ID` | `553b0a59-24da-4ffd-821a-de6647c85a0e` |
+| `AZURE_CLIENT_ID` (app `kiosco-agentes-gcp`, federada) | `08759b7c-ab12-4d6e-93c3-0e5f9511ad23` |
+| `REGISTRO_API_URL` | `https://ca-registro-api.orangegrass-f6b39256.centralus.azurecontainerapps.io` |
+| uniqueId de la cuenta de servicio de Cloud Run | `102559164316011874170` |
+| Revisión de Cloud Run vigente | `kiosco-agentes-00008-49s` (la `…00005-dvc` es la última sin Key Vault, para volver atrás) |
+
+**Qué se comprobó:**
+- Evento `secretos_key_vault` en Cloud Logging: `metodo: federacion_gcp`, `cargados: [azure-openai-api-key, foundry-search-api-key, registro-api-key]`, `fallidos: []`, `ya_definidos: [gemini-api-key]`.
+- `GET /salud` del servicio: `registro: api` y las cuatro claves en `true`.
+- Una consulta en lenguaje natural ("registra un chequeo de cámara…") llegó al Agente de Registro y guardó el chequeo en PostgreSQL de Azure por la API (id asignado por la base de Azure).
+- Una consulta de normativa y catálogo respondió con el modelo de Foundry y las KB, con las claves leídas desde Key Vault.
+- Las rutas internas de ADK (`/list-apps`, `/run`...) responden 401 sin `x-api-key`.
+
+**Decisión:** `gemini-api-key` se queda en Secret Manager de Google (también está en Key Vault, §4.5, pero no se usa desde ahí), para que el modelo de respaldo siga disponible aunque Azure o Key Vault caigan.
+
+**Pendiente de la app del kiosco:** la app Flask sigue llamando a Cloud Run privado con tu identidad de Google; para otro equipo hace falta `abrir_acceso_app.sh a` (cuenta de servicio invocadora). Ver `../../app_kiosco/README.md`.

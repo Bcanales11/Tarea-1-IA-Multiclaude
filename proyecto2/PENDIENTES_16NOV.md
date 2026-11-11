@@ -81,6 +81,7 @@ Lección del P1 (nota 5,2): **lo que no se muestra con título propio y en panta
    - Limitaciones por agente: en esos mismos archivos.
    - Logs, errores y reintento: `agentes/pruebas/README.md`.
    - Costos y escalabilidad: `agentes/COSTOS_Y_ESCALABILIDAD.md` §9, con la tabla para 1, 10, 50 y N kioscos, los escalones y el hardware.
+   - **¿Es justificable el costo para un colegio?** (⚠️ solo para el informe FINAL del 16 nov, no el de hoy) Respuesta lista en `agentes/COSTOS_Y_ESCALABILIDAD.md` **§10** (un colegio solo es caro; una red de colegios sí se sostiene; qué no podemos afirmar). Es justo lo que el profesor descontó en el P1: va con título propio en el informe.
    - Redes y NSG: lo aporta Benjamín (sección 2).
    - Golden set y corridas: `resumen.md` de las corridas.
 5. [ ] Guion del video con Max: `app_kiosco/GUION_DEMO.md`.
@@ -89,9 +90,9 @@ Lección del P1 (nota 5,2): **lo que no se muestra con título propio y en panta
 
 ## 4. Max — despliegue y video
 
-1. [ ] Desplegar Azure con la cuenta del curso: `infra/desplegar_azure.sh` → `verificar.sh` → `cargar_secretos.sh` → `federacion_gcp.sh`.
-2. [ ] Lado Google, en `agentes/infra_gcp/` (orden en su README): `ip_salida_fija.sh` (Cloud NAT con IP fija) → `abrir_acceso_app.sh a` (la app del kiosco entra con una cuenta de servicio y Cloud Run sigue privado) → `conectar_key_vault.sh`, fase 1 y fase 2.
-3. [ ] Redesplegar Cloud Run con los cambios del 10 nov: rutas de ADK cerradas con clave, Key Vault y registro por API.
+1. [x] **HECHO el 11 nov.** Desplegar Azure con la cuenta del curso: `infra/desplegar_azure.sh` → `verificar.sh` → `cargar_secretos.sh` → `federacion_gcp.sh`.
+2. [x] **HECHO el 11 nov** (IP fija, federación con Key Vault, claves de Azure en Key Vault; falta solo `abrir_acceso_app.sh a` si la app corre en otro equipo). Lado Google, en `agentes/infra_gcp/` (orden en su README): `ip_salida_fija.sh` (Cloud NAT con IP fija) → `abrir_acceso_app.sh a` (la app del kiosco entra con una cuenta de servicio y Cloud Run sigue privado) → `conectar_key_vault.sh`, fase 1 y fase 2.
+3. [x] **HECHO el 11 nov** (revisión `00008`). Redesplegar Cloud Run con los cambios del 10 nov: rutas de ADK cerradas con clave, Key Vault y registro por API.
 4. [ ] Correr las 3 corridas del golden set si Fernanda no tiene el `.env`.
 5. [ ] Grabar la demo del video: veredicto por cámara, chat que cruza ley y catálogo, el registro guardado en la BD de Azure, un log de reintento y respaldo, y la tabla de las 3 corridas.
 

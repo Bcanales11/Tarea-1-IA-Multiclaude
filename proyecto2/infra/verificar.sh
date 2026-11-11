@@ -45,8 +45,9 @@ comprobar() {
 # http <método> <ruta> [archivo-cabeceras|""] [json]  -> imprime el código HTTP; cuerpo en $CUERPO
 http() {
   local metodo="$1" ruta="$2" cabeceras="${3:-}" datos="${4:-}"
-  local -a args=(-sS -o "$CUERPO" -w '%{http_code}' --max-time 30 -X "$metodo")
-  if [[ -n "$cabeceras" ]]; then args+=(-H "@$cabeceras"); fi
+  # curl de Windows no entiende las rutas /tmp/... de Git Bash: se le pasan rutas nativas
+  local -a args=(-sS -o "$(ruta_nativa "$CUERPO")" -w '%{http_code}' --max-time 30 -X "$metodo")
+  if [[ -n "$cabeceras" ]]; then args+=(-H "@$(ruta_nativa "$cabeceras")"); fi
   if [[ -n "$datos" ]]; then args+=(-H 'content-type: application/json' --data "$datos"); fi
   curl "${args[@]}" "$URL$ruta" || true   # si no conecta, -w ya imprime 000
 }
@@ -96,13 +97,13 @@ comprobar "POST NO_APTO con sellos vacía -> 201" 201 "$(http POST /chequeos "$C
 APTO_CON_SELLOS='{"kiosco_id":"'"$KIOSCO_PRUEBA"'","producto":"Prueba APTO con sello","sku":"","sellos":["SODIO"],"veredicto":"APTO","motivo":"prueba","origen":"chat"}'
 comprobar "POST APTO con sellos -> 422 (warning en logs)" 422 "$(http POST /chequeos "$CABECERAS" "$APTO_CON_SELLOS")"
 
-SELLO_INVALIDO='{"kiosco_id":"'"$KIOSCO_PRUEBA"'","producto":"Prueba","sku":"","sellos":["AZÚCAR"],"veredicto":"NO_APTO","motivo":"prueba","origen":"chat"}'
+SELLO_INVALIDO='{"kiosco_id":"'"$KIOSCO_PRUEBA"'","producto":"Prueba","sku":"","sellos":["AZUCAR"],"veredicto":"NO_APTO","motivo":"prueba","origen":"chat"}'
 comprobar "POST sello inválido -> 422" 422 "$(http POST /chequeos "$CABECERAS" "$SELLO_INVALIDO")"
 
 VEREDICTO_INVALIDO='{"kiosco_id":"'"$KIOSCO_PRUEBA"'","producto":"Prueba","sku":"","sellos":[],"veredicto":"QUIZAS","motivo":"prueba","origen":"chat"}'
 comprobar "POST veredicto inválido -> 422" 422 "$(http POST /chequeos "$CABECERAS" "$VEREDICTO_INVALIDO")"
 
-HOY="$(TZ=America/Santiago date +%Y-%m-%d)"
+HOY="$(date +%Y-%m-%d)"   # la hora local de Windows es la de Chile (en Git Bash TZ=America/Santiago da GMT); en Cloud Shell: TZ=America/Santiago date
 comprobar "GET /chequeos?kiosco_id=...&desde=$HOY -> 200" 200 \
   "$(http GET "/chequeos?kiosco_id=$KIOSCO_PRUEBA&desde=$HOY" "$CABECERAS")"
 if [[ -n "$ID_CREADO" ]] && grep -q "\"id\":$ID_CREADO[,}]" "$CUERPO"; then

@@ -24,10 +24,10 @@ DIR_INFRA="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=variables.sh
 source "$DIR_INFRA/variables.sh"
 
-FOUNDRY_RECURSO="${FOUNDRY_RECURSO:-}"
-FOUNDRY_RG="${FOUNDRY_RG:-}"
+FOUNDRY_RECURSO="${FOUNDRY_RECURSO:-kiosco-g19-foundry}"
+FOUNDRY_RG="${FOUNDRY_RG:-$RG}"
 SEARCH_SERVICIO="${SEARCH_SERVICIO:-kiosco-g19-search}"
-SEARCH_RG="${SEARCH_RG:-}"
+SEARCH_RG="${SEARCH_RG:-$RG}"
 ROTAR_API_KEY="${ROTAR_API_KEY:-false}"
 SOBRESCRIBIR="${SOBRESCRIBIR:-false}"   # true = reemplaza secretos que ya existen
 

@@ -59,7 +59,9 @@ class Consulta(BaseModel):
 @app.get("/salud")
 def salud():
     return {"estado": "ok", "modelo_principal": config.MODELO_PRINCIPAL, "kb": config.KB_BACKEND,
-            "registro": config.REGISTRO_BACKEND}
+            "registro": config.REGISTRO_BACKEND,
+            "claves": {"azure": bool(os.getenv("AZURE_API_KEY")), "gemini": bool(os.getenv("GEMINI_API_KEY")),
+                       "busqueda": bool(config.FOUNDRY_SEARCH_API_KEY), "registro": bool(config.REGISTRO_API_KEY)}}
 
 
 @app.post("/consulta")

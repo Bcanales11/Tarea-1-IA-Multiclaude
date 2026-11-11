@@ -21,7 +21,7 @@ flowchart LR
   subgraph GCP["Google Cloud (southamerica-west1)"]
     CR["Cloud Run: kiosco-agentes"] --> NAT["Cloud NAT\nIP_SALIDA_CLOUD_RUN"]
   end
-  subgraph AZ["Azure, East US: rg-kiosco-g19"]
+  subgraph AZ["Azure: rg-kiosco-g19 (API y BD en Central US; Foundry, AI Search y Key Vault en East US)"]
     subgraph VNET["vnet-kiosco-g19 10.19.0.0/16"]
       subgraph SA["snet-api 10.19.0.0/27 · nsg-snet-api"]
         CA["Container Apps\nca-registro-api :8000"]
@@ -64,7 +64,7 @@ Colegio (on-premise) ──> Cloud Run (agentes); opcionalmente IP_COLEGIO tambi
 | Subred | Rango | IPs utilizables* | Delegación | NSG | Qué contiene |
 |---|---|---|---|---|---|
 | `snet-api` | 10.19.0.0/27 | 27 | `Microsoft.App/environments` | `nsg-snet-api` | Entorno de Container Apps (workload profiles, mínimo /27) con la API de registro |
-| `snet-db` | 10.19.1.0/28 | 11 | `Microsoft.DBforPostgreSQL/flexibleServers` | `nsg-snet-db` | PostgreSQL Flexible Server, acceso privado + zona DNS privada `psql-kiosco-g19.private.postgres.database.azure.com` |
+| `snet-db` | 10.19.1.0/28 | 11 | `Microsoft.DBforPostgreSQL/flexibleServers` | `nsg-snet-db` | PostgreSQL Flexible Server, acceso privado + zona DNS privada `privatelink.postgres.database.azure.com` |
 | `snet-pe` | 10.19.2.0/27 | 27 | — (políticas de red de private endpoint activadas) | `nsg-snet-pe` | Private endpoint de Key Vault + zona DNS privada `privatelink.vaultcore.azure.net` |
 
 \* Azure reserva 5 IPs por subred. VNet `vnet-kiosco-g19` 10.19.0.0/16 (el 19 es por el grupo), queda espacio para más subredes.
@@ -154,7 +154,7 @@ Capturas:
 - `azure_07_keyvault_secretos.png`: Key Vault → Secretos (solo la lista de nombres).
 - `azure_08_keyvault_iam.png`: un secreto (`registro-api-key`) → Control de acceso (IAM) → Asignaciones de roles.
 - `azure_09_postgres_redes.png`: PostgreSQL → Redes ("Acceso privado (integración con VNet)", sin acceso público).
-- `azure_10_containerapp_ingress.png`: `ca-registro-api` → Ingress (restricciones de IP) y → Secretos (referencias a Key Vault, sin valores).
+- `azure_10_containerapp_ingress.png`: `ca-registro-api` → Ingress (restricciones de IP) y → Variables de entorno (`KEY_VAULT_URL`, `AZURE_CLIENT_ID`; ya no hay secretos ni valores).
 
 ### 2. Verificar (≈ 3 min)
 
@@ -211,9 +211,17 @@ Para volver a entrar (más pruebas o capturas), corre de nuevo `desplegar_azure.
 | Cambió la IP de Cloud Run | `IP_SALIDA_CLOUD_RUN=<nueva> bash desplegar_azure.sh` (la IP vieja hay que quitarla a mano del firewall de Key Vault, de la regla NSG y del ingress) |
 | Borrar lo nuestro después de la entrega (Foundry y las KB quedan) | `bash destruir.sh` |
 
+## Cómo lee la API sus secretos (cambio del 10 nov)
+
+La API **no** usa "secret references" de Container Apps. La plataforma las resuelve fuera de nuestra red y el firewall de Key Vault (acceso público en `Deny`) las rechaza: la app quedó en estado `Failed` con `unable to fetch secret ... using Managed identity`, aunque la identidad tenía el rol correcto. En cambio, al arrancar, `api_registro/app/config.py` lee `registro-api-key` y `registro-database-url` con su identidad administrada (`KEY_VAULT_URL` y `AZURE_CLIENT_ID`), **por el private endpoint dentro de la VNet**. Eso requiere que el DNS privado resuelva `kv-kiosco-g19.vault.azure.net` a la IP del private endpoint: el script crea el registro A si falta (el 10 nov la zona quedó vacía) y reintenta la lectura hasta 6 veces.
+
+## Quién controla la entrada a la API
+
+En un entorno de Container Apps externo con workload profiles, Microsoft documenta que bloquear la **entrada** solo con NSG no está soportado. Las reglas de entrada del NSG de `snet-api` quedan como defensa adicional, pero **el control real de quién puede llamar a la API es la restricción de IP del ingress de la Container App** (solo la IP fija de Cloud Run, el colegio y el admin), más la `x-api-key`. En el informe se explica así. Fuente: <https://learn.microsoft.com/en-us/azure/container-apps/firewall-integration>.
+
 ## Supuestos
 
-- Región East US para todo, igual que Foundry (menos latencia entre la API y la BD; Foundry no depende de esta red).
+- **La API y la base de datos están en Central US, no en East US.** La suscripción del curso restringe PostgreSQL Flexible en East US (`Provisioning is restricted in this region`, lo dice la API de Azure) y en East US 2 y West US 3 (`SkuNotAvailable` al crear aunque el listado diga disponible); Central US y West US 2 sí lo permiten (probado el 10 nov con servidores desechables). Foundry, AI Search y Key Vault siguen en East US: la red de la API no depende de ellos, y el private endpoint de Key Vault cruza de región sin problema.
 - Volumen (de `../agentes/COSTOS_Y_ESCALABILIDAD.md`): por kiosco ~900 registros y ~40 reportes al mes; en el pico sincronizado, 0,022 consultas/s por kiosco. Con 50 kioscos son ~1,1 peticiones/s y ~47.000 al mes: una réplica de 0,25 vCPU y una B1ms sobran.
 - Cada chequeo pesa ~300 bytes: 50 kioscos durante un año son ~540.000 filas (~0,2 GB) de los 32 GiB.
 - Cloud Run sale a Internet por una IP fija (Cloud NAT con conector VPC o salida directa de VPC); sin ella, la restricción por IP no sirve.
@@ -245,7 +253,7 @@ Para volver a entrar (más pruebas o capturas), corre de nuevo `desplegar_azure.
 | **No se pueden crear app registrations** (Entra ID del curso las bloquea) | `federacion_gcp.sh` falla en el paso 1 | (a) Pedir al profesor o al administrador del tenant que cree `kiosco-agentes-gcp` con la credencial federada (el JSON está en el script) y te dé `AZURE_CLIENT_ID`. (b) Si se permite una app pero no la federación: **service principal con secret** guardado directo en Secret Manager de Google, sin pasar por pantalla ni chat: `az ad app credential reset --id <appId> --years 1 --query password -o tsv \| gcloud secrets versions add azure-client-secret --data-file=- --project kiosco-g19-agentes` (lo corre quien tenga acceso a los dos lados) y Cloud Run usa `AZURE_CLIENT_SECRET` (`DefaultAzureCredential` lo toma solo). Es un secreto de larga duración: rotarlo con el mismo comando antes de que venza y declararlo como limitación. (c) Si nada de eso: los agentes siguen con Secret Manager de Google (estado actual) y Key Vault queda solo para la API; se declara en el informe |
 | No tienes permiso para asignar roles (no eres Owner) | "AuthorizationFailed" en `role assignment create` | Pedir al profesor el rol "Role Based Access Control Administrator" sobre `rg-kiosco-g19` |
 | ACR Tasks bloqueado en la suscripción (pasa en algunas de estudiante) | `az acr build` falla con "TasksOperationsNotAllowed" o similar | Con Docker Desktop abierto: `USAR_DOCKER_LOCAL=true bash desplegar_azure.sh` |
-| PostgreSQL Flexible restringido en East US para la suscripción | "location is restricted" al crear el servidor | Desplegar todo en otra región: `UBICACION=eastus2 bash desplegar_azure.sh` (antes, `destruir.sh` si quedó algo a medias). Foundry sigue en East US |
+| (YA OCURRIÓ, resuelto) PostgreSQL Flexible restringido en East US, East US 2 y West US 3 | "location is restricted" o `SkuNotAvailable` al crear el servidor | El script usa `UBICACION=centralus` por defecto. Si Central US se llena, `UBICACION=westus2`. Antes: `UBICACION=eastus2 bash desplegar_azure.sh` (antes, `destruir.sh` si quedó algo a medias). Foundry sigue en East US |
 | Las reglas NSG estrictas de salida impiden aprovisionar el entorno o descargar la imagen | El entorno queda en estado fallido, o la revisión no arranca con "ImagePullBackOff" | `NSG_SALIDA_ESTRICTA=false bash desplegar_azure.sh` (quita solo "Denegar-salida-Internet"; el resto de las reglas sigue) y anotarlo en el informe. Las reglas requeridas se basaron en <https://learn.microsoft.com/azure/container-apps/firewall-integration>: revisarlas ahí si cambian |
 | La API no logra leer Key Vault por la red privada | Revisión con error "secret ... keyvault" en `az containerapp logs show --type system` | Revisar que la zona `privatelink.vaultcore.azure.net` esté enlazada a la VNet y que el private endpoint esté "Approved" (`verificar.sh` lo muestra) |
 | Cambió tu IP durante el despliegue | `verificar.sh` da 403 o no puede leer Key Vault | Vuelve a correr `desplegar_azure.sh` |
