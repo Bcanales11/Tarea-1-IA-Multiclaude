@@ -1,0 +1,85 @@
+{
+ "fecha": "2026-11-10T20:09:30",
+ "golden": "preguntas_v1.jsonl",
+ "casos": 3,
+ "modo": "local",
+ "concurrencia": 4,
+ "timeout_s": 180,
+ "corridas": [
+  {
+   "corrida": 1,
+   "correctas": 3,
+   "total": 3,
+   "calificados": 3,
+   "porcentaje": 100.0,
+   "latencia_media_s": 9.42,
+   "latencia_p95_s": 9.9,
+   "errores": 0,
+   "timeouts": 0,
+   "casos_con_modelo_respaldo": 0,
+   "eventos_modelo_respaldo": 0,
+   "modelos_vistos": {
+    "gpt-5.4-mini": 6
+   }
+  },
+  {
+   "corrida": 2,
+   "correctas": 3,
+   "total": 3,
+   "calificados": 3,
+   "porcentaje": 100.0,
+   "latencia_media_s": 8.51,
+   "latencia_p95_s": 9.03,
+   "errores": 0,
+   "timeouts": 0,
+   "casos_con_modelo_respaldo": 0,
+   "eventos_modelo_respaldo": 0,
+   "modelos_vistos": {
+    "gpt-5.4-mini": 6
+   }
+  }
+ ],
+ "por_kb": {
+  "normativa": [
+   [
+    3,
+    3
+   ],
+   [
+    3,
+    3
+   ]
+  ]
+ },
+ "por_dificultad": {
+  "facil": [
+   [
+    1,
+    1
+   ],
+   [
+    1,
+    1
+   ]
+  ],
+  "media": [
+   [
+    2,
+    2
+   ],
+   [
+    2,
+    2
+   ]
+  ]
+ },
+ "requisitos": {
+  "golden_set_al_menos_300": false,
+  "todas_las_corridas_hasta_95": false,
+  "porcentajes_distintos": 1,
+  "al_menos_2_porcentajes_distintos": false
+ },
+ "ids_fallaron_en_todas": [],
+ "modelo_agentes_y_juez": "azure/gpt-5.4-mini",
+ "modelo_respaldo": "gemini/gemini-3.5-flash"
+}

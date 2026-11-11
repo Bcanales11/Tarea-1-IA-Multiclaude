@@ -1,0 +1,130 @@
+{
+ "fecha": "2026-11-10T21:15:49",
+ "golden": "golden_set.jsonl",
+ "casos": 359,
+ "modo": "local",
+ "concurrencia": 4,
+ "timeout_s": 180,
+ "corridas": [
+  {
+   "corrida": 1,
+   "correctas": 311,
+   "total": 359,
+   "calificados": 359,
+   "porcentaje": 86.6,
+   "latencia_media_s": 11.38,
+   "latencia_p95_s": 17.95,
+   "errores": 0,
+   "timeouts": 0,
+   "casos_con_modelo_respaldo": 0,
+   "eventos_modelo_respaldo": 0,
+   "modelos_vistos": {
+    "gpt-5.4-mini": 722
+   }
+  }
+ ],
+ "por_kb": {
+  "ambas": [
+   [
+    56,
+    68
+   ]
+  ],
+  "catalogo": [
+   [
+    88,
+    102
+   ]
+  ],
+  "ninguna": [
+   [
+    49,
+    57
+   ]
+  ],
+  "normativa": [
+   [
+    118,
+    132
+   ]
+  ]
+ },
+ "por_dificultad": {
+  "dificil": [
+   [
+    122,
+    150
+   ]
+  ],
+  "facil": [
+   [
+    63,
+    67
+   ]
+  ],
+  "media": [
+   [
+    126,
+    142
+   ]
+  ]
+ },
+ "requisitos": {
+  "golden_set_al_menos_300": true,
+  "todas_las_corridas_hasta_95": true,
+  "porcentajes_distintos": 1,
+  "al_menos_2_porcentajes_distintos": false
+ },
+ "ids_fallaron_en_todas": [
+  "A-008",
+  "A2-005",
+  "A2-008",
+  "A2-009",
+  "A2-027",
+  "A2-036",
+  "A2-042",
+  "A2-043",
+  "A2-045",
+  "A2-046",
+  "A2-053",
+  "A2-055",
+  "C-014",
+  "C2-001",
+  "C2-027",
+  "C2-032",
+  "C2-060",
+  "C2-061",
+  "C2-062",
+  "C2-063",
+  "C2-064",
+  "C2-065",
+  "C2-066",
+  "C2-075",
+  "C2-076",
+  "C2-080",
+  "F-006",
+  "F-014",
+  "N-021",
+  "N-029",
+  "N-038",
+  "N2-009",
+  "N2-013",
+  "N2-023",
+  "N2-028",
+  "N2-038",
+  "N2-052",
+  "N2-056",
+  "N2-059",
+  "N2-060",
+  "T2-010",
+  "T2-012",
+  "T2-019",
+  "T2-022",
+  "T2-024",
+  "T2-035",
+  "T2-039",
+  "T2-045"
+ ],
+ "modelo_agentes_y_juez": "azure/gpt-5.4-mini",
+ "modelo_respaldo": "gemini/gemini-3.5-flash"
+}

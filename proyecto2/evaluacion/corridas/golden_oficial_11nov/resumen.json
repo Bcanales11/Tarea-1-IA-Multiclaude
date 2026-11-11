@@ -1,0 +1,183 @@
+{
+ "fecha": "2026-11-11T05:14:28",
+ "golden": "golden_set.jsonl",
+ "casos": 359,
+ "modo": "http",
+ "concurrencia": 4,
+ "timeout_s": 180,
+ "corridas": [
+  {
+   "corrida": 1,
+   "correctas": 315,
+   "total": 359,
+   "calificados": 359,
+   "porcentaje": 87.7,
+   "latencia_media_s": 11.35,
+   "latencia_p95_s": 20.83,
+   "errores": 0,
+   "timeouts": 0,
+   "casos_con_modelo_respaldo": 0,
+   "eventos_modelo_respaldo": 0,
+   "modelos_vistos": {}
+  },
+  {
+   "corrida": 2,
+   "correctas": 314,
+   "total": 359,
+   "calificados": 359,
+   "porcentaje": 87.5,
+   "latencia_media_s": 10.7,
+   "latencia_p95_s": 17.46,
+   "errores": 0,
+   "timeouts": 0,
+   "casos_con_modelo_respaldo": 0,
+   "eventos_modelo_respaldo": 0,
+   "modelos_vistos": {}
+  },
+  {
+   "corrida": 3,
+   "correctas": 316,
+   "total": 359,
+   "calificados": 359,
+   "porcentaje": 88.0,
+   "latencia_media_s": 10.99,
+   "latencia_p95_s": 18.85,
+   "errores": 0,
+   "timeouts": 0,
+   "casos_con_modelo_respaldo": 0,
+   "eventos_modelo_respaldo": 0,
+   "modelos_vistos": {}
+  }
+ ],
+ "por_kb": {
+  "ambas": [
+   [
+    62,
+    68
+   ],
+   [
+    61,
+    68
+   ],
+   [
+    58,
+    68
+   ]
+  ],
+  "catalogo": [
+   [
+    90,
+    102
+   ],
+   [
+    89,
+    102
+   ],
+   [
+    91,
+    102
+   ]
+  ],
+  "ninguna": [
+   [
+    45,
+    57
+   ],
+   [
+    45,
+    57
+   ],
+   [
+    46,
+    57
+   ]
+  ],
+  "normativa": [
+   [
+    118,
+    132
+   ],
+   [
+    119,
+    132
+   ],
+   [
+    121,
+    132
+   ]
+  ]
+ },
+ "por_dificultad": {
+  "dificil": [
+   [
+    121,
+    150
+   ],
+   [
+    123,
+    150
+   ],
+   [
+    122,
+    150
+   ]
+  ],
+  "facil": [
+   [
+    65,
+    67
+   ],
+   [
+    62,
+    67
+   ],
+   [
+    65,
+    67
+   ]
+  ],
+  "media": [
+   [
+    129,
+    142
+   ],
+   [
+    129,
+    142
+   ],
+   [
+    129,
+    142
+   ]
+  ]
+ },
+ "requisitos": {
+  "golden_set_al_menos_300": true,
+  "todas_las_corridas_hasta_95": true,
+  "porcentajes_distintos": 3,
+  "al_menos_2_porcentajes_distintos": true
+ },
+ "ids_fallaron_en_todas": [
+  "A2-042",
+  "A2-043",
+  "A2-046",
+  "C2-001",
+  "C2-061",
+  "C2-062",
+  "C2-063",
+  "C2-064",
+  "C2-065",
+  "C2-066",
+  "C2-075",
+  "C2-076",
+  "C2-080",
+  "N2-052",
+  "T2-012",
+  "T2-022",
+  "T2-024",
+  "T2-039",
+  "T2-045"
+ ],
+ "modelo_agentes_y_juez": "azure/gpt-5.4-mini",
+ "modelo_respaldo": "gemini/gemini-3.5-flash"
+}
