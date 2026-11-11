@@ -41,3 +41,14 @@ def test_consulta_con_servidor_sin_clave_configurada_da_401(servidor, monkeypatc
 def test_consulta_sin_mensaje_da_422(cliente):
     r = cliente.post("/consulta", json={}, headers={"x-api-key": "clave-de-prueba"})
     assert r.status_code == 422
+
+
+@pytest.mark.parametrize("ruta", ["/list-apps", "/apps/kiosco_agentes/users/u/sessions", "/docs"])
+def test_rutas_de_adk_sin_clave_dan_401(cliente, ruta):
+    """Las rutas que agrega ADK (get_fast_api_app) también exigen x-api-key."""
+    assert cliente.get(ruta).status_code == 401
+
+
+def test_rutas_de_adk_con_clave_pasan(cliente):
+    r = cliente.get("/list-apps", headers={"x-api-key": "clave-de-prueba"})
+    assert r.status_code != 401

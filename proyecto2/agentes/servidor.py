@@ -18,7 +18,8 @@ import secrets
 import time
 from pathlib import Path
 
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 from google.adk.cli.fast_api import get_fast_api_app
 from google.adk.runners import InMemoryRunner
 from google.genai import types
@@ -32,6 +33,21 @@ CLAVE = os.getenv("AGENTES_API_KEY", "")
 
 app = get_fast_api_app(agents_dir=str(Path(__file__).parent), web=False)
 _runner = InMemoryRunner(agent=root_agent, app_name=APP)
+
+_RUTAS_LIBRES = {"/salud"}
+
+
+@app.middleware("http")
+async def exigir_clave(request: Request, call_next):
+    """Toda ruta salvo /salud exige x-api-key, incluidas las que agrega ADK (/run, /run_sse,
+    /apps/...). Sin esto, si el servicio se abre al público cualquiera podría usar los agentes
+    y gastar tokens (detectado el 10 nov)."""
+    if request.url.path not in _RUTAS_LIBRES:
+        clave = request.headers.get("x-api-key", "")
+        if not CLAVE or not secrets.compare_digest(clave, CLAVE):
+            logs.evento("acceso_rechazado", ruta=request.url.path)
+            return JSONResponse(status_code=401, content={"detail": "clave inválida"})
+    return await call_next(request)
 
 
 class Consulta(BaseModel):

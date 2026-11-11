@@ -1,0 +1,6 @@
+# Base SQLite local y cachés (los .env y .venv ya están cubiertos por proyecto2/.gitignore)
+datos_local/
+*.db
+.pytest_cache/
+.env
+.venv/

@@ -53,6 +53,37 @@ set AGENTES_API_KEY=<la misma del .env de la app>
 uvicorn servidor:app --port 8080
 ```
 
+## Acceso a Cloud Run
+
+El servicio `kiosco-agentes` es **privado**: Google rechaza con 403 cualquier llamada sin una identidad que tenga `roles/run.invoker`, antes de que llegue a `servidor.py`. Hoy la app solo manda `x-api-key`, así que contra Cloud Run no funciona. Hay dos formas de abrirlo; los comandos exactos están en `../agentes/infra_gcp/abrir_acceso_app.sh` (no se han corrido).
+
+| | (a) Privado + cuenta de servicio invocadora | (b) Público + `x-api-key` |
+|---|---|---|
+| Qué se hace | Cuenta de servicio `kiosco-app-invoker` con `roles/run.invoker` **solo sobre este servicio**. La app pide un ID token de Google y lo manda en `Authorization: Bearer`, además de `x-api-key` | `allUsers` con `roles/run.invoker` (equivale a `--allow-unauthenticated`). Solo protege `x-api-key` |
+| Barreras | 2: Google (IAM) y la clave de `servidor.py` | 1: la clave |
+| Rutas estándar de ADK (`/run`, `/run_sse`, `/apps/...`) | Cerradas por IAM | **Abiertas sin clave**: cualquiera en internet podría usar los agentes y gastar tokens. Habría que quitarlas de `servidor.py` antes |
+| Restricción por IP del colegio | No hace falta | Cloud Run no filtra por IP (`--ingress` solo distingue interno/externo). Haría falta un balanceador HTTPS + Cloud Armor, con dominio propio, ≈ US$18-25/mes |
+| Limitación | El equipo del colegio guarda un **archivo de clave** de la cuenta de servicio (`GOOGLE_APPLICATION_CREDENTIALS`). Si alguien lo copia, puede invocar el servicio, aunque igual necesita `x-api-key`. Hay que guardarlo fuera del repo y rotarlo | Una sola clave compartida para todo internet |
+| Cambios en la app | `AGENTES_AUDIENCIA_IAM` + `GOOGLE_APPLICATION_CREDENTIALS` + `pip install google-auth` | Ninguno |
+
+**Recomendación: (a).** Es la única que mantiene cerradas las rutas de ADK sin tocar el servidor, y suma la identidad de Google a la clave. El archivo de clave es su limitación y se declara así en el informe; con muchos colegios, lo correcto sería una cuenta de servicio por colegio (se revoca una sin tocar las demás) o federación de identidad desde el equipo del colegio si tuviera un proveedor de identidad.
+
+**Cómo lo usa la app (`agentes_cliente.py`):**
+
+- Si `AGENTES_AUDIENCIA_IAM` está definido (la URL del servicio de Cloud Run), pide el ID token con `google.oauth2.id_token.fetch_id_token`, usando las credenciales del archivo de `GOOGLE_APPLICATION_CREDENTIALS`. El token dura 1 hora y se reutiliza hasta 5 minutos antes de que venza. Si Cloud Run responde 401 o 403, se descarta y se pide uno nuevo en la consulta siguiente.
+- Si no está definido, la app funciona como siempre (agentes locales o servicio público).
+- Si falta `google-auth` o el archivo de credenciales, la consulta cae al respaldo local como cualquier otra falla de la nube (`AgentesNoDisponibles`), y el escaneo sigue funcionando.
+
+```bash
+# (a), en el equipo del kiosco, con el venv de vision/
+pip install google-auth
+# app_kiosco/.env
+AGENTES_URL=https://kiosco-agentes-<...>.run.app
+AGENTES_AUDIENCIA_IAM=https://kiosco-agentes-<...>.run.app
+GOOGLE_APPLICATION_CREDENTIALS=C:\kiosco\kiosco-app-invoker.json   # fuera del repo
+AGENTES_API_KEY=<la de agentes-api-key>
+```
+
 ## Prueba del 9 nov (agentes locales con gpt-5.4-mini y KB de Foundry)
 
 - **Foto:** 6 fotos del set de validación, todas NO APTO. Las 6 quedaron explicadas por los agentes y registradas en la BD con origen `vision` y los sellos correctos.
