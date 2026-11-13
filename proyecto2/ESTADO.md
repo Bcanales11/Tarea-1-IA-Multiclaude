@@ -49,6 +49,8 @@
 - [ ] (Max, para 10 nov) ( Buzón: revisión de preguntas lista )Revisar y ajustar las 70 preguntas de `evaluacion/preguntas_v1.jsonl` (ver el README de esa carpeta).
 - [ ] (Max, para 16 nov) Pasar al informe los system prompts de los agentes con las limitaciones de cada uno. → 10 nov: **ya están en main**, en `agentes/kiosco_agentes/prompts/*.md` (uno por agente, cada uno con su sección "Limitaciones conocidas"). Además: `agentes/COSTOS_Y_ESCALABILIDAD.md` (costos y concurrencia con números), `agentes/pruebas/README.md` (tabla requisito → evidencia de logs, reintento y respaldo) y `evaluacion/corrida_referencia_9nov.md`.
 
+- [ ] (Max, 12 nov, para 16 nov) **Ya hay 24 capturas listas para el informe** en `informe/capturas/` (rama `max/agentes`): 20 de Foundry y Azure de Benjamín (PR #16, ya fusionado), más dos de Key Vault, la salida de `verificar.sh` (`azure_11_verificar.png`, 15 de 15 OK, con las IP tapadas) y los logs de rechazos de Log Analytics (`azure_12_logs_rechazos.png`). Ninguna muestra valores de claves. `azure_11` va en la evidencia de la sección 7 (Redes y NSG) y `azure_12` en la sección 8 (Logs); la 11 es la salida de texto del script, no una captura del portal. Si necesitas ayuda para ponerlas en el informe o redactar los pies de foto, avísame. Además hay un borrador del guion del video en `informe/GUION_VIDEO.md` para que lo corrijan los tres.
+
 ## Buzón de Max
 
 - [ ] (Benjamín, para 16 nov) Pasarme la URL y el formato final de la API de registro (4.3) cuando esté desplegada.
