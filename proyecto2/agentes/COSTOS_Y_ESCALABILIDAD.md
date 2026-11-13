@@ -163,6 +163,8 @@ Conclusiones y qué cambiar, en orden:
 4. **Subir `--max-instances`** de 1 a `⌈0,064 × N⌉ + 1` (con el arreglo) o `⌈0,212 × N⌉ + 1` (sin él): 3 para 10 kioscos, 5 para 50 con el arreglo. Es un tope de gasto y de cupo, no un costo fijo.
 5. **`--min-instances 1`** desde ≈ 10 kioscos o si el demo no puede tolerar el arranque en frío: +US$18/mes (sección 4). El arranque en frío no se midió; con `min 0` la primera consulta después de 15 min sin uso lo paga.
 6. **Límite de tokens por minuto de Azure.** En el pico sincronizado de 50 kioscos se usarían ≈ 0,9 M TPM y ≈ 520 solicitudes por minuto: **91 % del límite de 1 M TPM del nivel 1** (si la suscripción del curso está en nivel 1). Con 100 kioscos se supera incluso el nivel 2 (2 M). Acciones: pedir aumento de cuota del deployment (o subir de nivel), dejar que los 429 caigan al respaldo Gemini (ya configurado), y repartir en el tiempo con un deployment adicional de `gpt-5.4-mini` en otra región (la cuota es por región, suscripción y modelo).
+
+> **Actualización 10 nov:** la cuota real del deployment es **3,11 M TPM** (no 1 M), así que con 50 kioscos en el pico se usa ≈ 29 % de la cuota, no 91 %. Ver §9.4.
 7. **Azure AI Search Basic** admite hasta 9 unidades de búsqueda (réplicas × particiones) y 15 índices, según la página de precios. El pico de 50 kioscos son ≈ 1,4 búsquedas en KB por segundo (1,29 por consulta × 1,12 consultas/s; no medido bajo carga). Si la latencia de las búsquedas (hoy 3,4 s) sube en pruebas de carga, agregar una réplica (otros US$73,73 en Basic) o pasar a S1 (US$245).
 8. **Cloud Run** a 100 kioscos factura 1,8 millones de segundos de instancia y cuesta ≈ US$62 al mes: no es el cuello de botella de costo en ningún escenario de este documento.
 
@@ -203,3 +205,139 @@ export PYTHONIOENCODING=utf-8 PYTHONPATH=.
 ```
 
 Cada corrida de 18 consultas cuesta ≈ US$0,35 entre `gpt-5.4-mini` y razonamiento de KB. El script no imprime claves ni lee el `.env` a mano: lo carga `kiosco_agentes/config.py`.
+
+## 9. Costo total con la infraestructura de Azure y la red (agregado el 10 nov)
+
+Completa lo que faltaba en las secciones 4 y 6: la API de registro, la base de datos, Key Vault, el registro de contenedores, el private endpoint, las IP y la salida de Azure, y del lado de Google, Cloud NAT y la IP estática (`infra_gcp/`). Las secciones 1 a 8 no cambian; esta sección suma sobre el total de la sección 4.
+
+**Todo lo nuevo es estimado y hay que confirmarlo en las calculadoras** (<https://azure.microsoft.com/pricing/calculator/> y <https://cloud.google.com/products/calculator>). Los precios de Azure salen de la Azure Retail Prices API (<https://prices.azure.com/api/retail/prices>, región `eastus`, consultada el 10 nov 2026) y los de Cloud NAT de <https://cloud.google.com/nat/pricing> (leída el 10 nov 2026). Todo es precio de lista, sin IVA, sin créditos de estudiante ni capa gratis de 12 meses de Azure.
+
+### 9.1 Supuestos
+
+| Supuesto | Valor | Origen |
+|---|---|---|
+| Chequeos por kiosco | 150 escaneos al día, 30 % NO APTO = **45 registros al día, 900 al mes** (solo los NO APTO van a la nube) | Sección 3 (supuesto) |
+| Consultas a los agentes | 67 por kiosco al día, 1.340 al mes | Sección 3 |
+| Horario de recreo | 3 ventanas de 20 min con el 20 % de las consultas cada una, ráfaga ×2, todos los colegios a la misma hora | Sección 3 (peor caso) |
+| Azure AI Search | Basic, 1 réplica | **Confirmado el 10 nov** (`kiosco-g19-search`, SKU basic, leído con `az`) |
+| Cuota del deployment `gpt-5.4-mini` | **3,11 M de tokens por minuto (TPM) y 3.110 solicitudes por minuto** (Global Standard, capacidad 3.110) | **Confirmado el 10 nov** (límites del deployment leídos con `az cognitiveservices account deployment list`) |
+| API de registro | Azure Container Apps, plan de consumo, **1 réplica mínima** de 0,25 vCPU y 0,5 GiB (sin arranque en frío para el agente de registro), casi siempre en reposo; no se descuenta la capa gratis mensual | Diseño de Benjamín; tamaño supuesto |
+| Base de datos | PostgreSQL Flexible Server **B1ms** (1 vCore con ráfaga, 2 GiB), 32 GiB de almacenamiento, respaldo de 7 días dentro del cupo gratis (100 % del almacenamiento) | Diseño de Benjamín |
+| Acceso privado a la BD | 1 private endpoint + 1 zona DNS privada | Diseño de Benjamín |
+| Key Vault | Standard. Se lee al arrancar cada instancia (4 secretos + token), unas 1.000 operaciones al mes | `secretos.py` |
+| Imagen de la API | Azure Container Registry Basic (10 GB incluidos) | Diseño de Benjamín |
+| IP pública de Azure | 1 IP Standard para la entrada de la API | **Supuesto conservador**; puede venir incluida en el entorno de Container Apps |
+| Logs de Azure (Log Analytics) | < 5 GB al mes (gratis) | Supuesto |
+| Tráfico por consulta | ≈ 200 KB entre ida y vuelta por el NAT; ≈ 100 KB de respuesta desde Azure | Supuesto (la sección 4 midió ≈ 60 KB de ida) |
+| Instancias de Cloud Run que usan el NAT | Las de `max-instances` recomendado: ⌈0,064 × N⌉ + 1 (cota alta) | Sección 5 |
+| Cloud Run | `min-instances 0`, como en la sección 4 (con `min-instances 1` se suman US$18,1) | Sección 4 |
+
+### 9.2 Precios nuevos
+
+| Concepto | Precio de lista | Mes |
+|---|---|---|
+| Container Apps, vCPU en reposo / activa | US$0,000003 / US$0,000024 por vCPU-s | 0,25 vCPU × 730 h en reposo = 1,97 |
+| Container Apps, memoria (reposo y activa) | US$0,000003 por GiB-s | 0,5 GiB × 730 h = 3,94 |
+| Container Apps, solicitudes | US$0,40 / millón (2 M gratis) | 0 |
+| PostgreSQL Flexible B1ms | US$0,017 / hora | 12,41 |
+| Almacenamiento PostgreSQL | US$0,115 / GB-mes | 32 GB = 3,68 |
+| Key Vault Standard | US$0,03 / 10.000 operaciones | < 0,01 |
+| Container Registry Basic | US$0,1666 / día | 5,07 |
+| Private endpoint | US$0,01 / hora (+ US$0,01 / GB procesado) | 7,30 |
+| Zona DNS privada | US$0,50 / zona-mes (primeras 25) | 0,50 |
+| IP pública Standard (Azure) | US$0,005 / hora | 3,65 |
+| Salida de Azure a internet | 100 GB gratis al mes, luego US$0,08 / GB | 0 hasta ≈ 750 kioscos |
+| IP externa usada por Cloud NAT (Google) | US$0,005 / hora | 3,65 |
+| Puerta de enlace Cloud NAT (Google) | US$0,0014 / hora por instancia, tope US$0,044 / hora (32 instancias) | 1,02 por instancia |
+| Datos procesados por Cloud NAT (Google) | US$0,045 / GiB | ≈ 0,012 por kiosco |
+| VPC, subred, Cloud Router, Direct VPC egress | Sin costo propio | 0 |
+
+### 9.3 Costo mensual total (US$/mes, estimado)
+
+| Línea | 1 kiosco | 10 kioscos | 50 kioscos | N kioscos |
+|---|---|---|---|---|
+| Azure: modelo, KB y AI Search Basic (sección 4) | 96,39 | 310,22 | 1.260,59 | 72,6 + 23,76 N |
+| Azure: API de registro (Container Apps, 1 réplica) | 5,91 | 5,91 | 5,91 | 5,91 |
+| Azure: PostgreSQL B1ms + 32 GB | 16,09 | 16,09 | 16,09 | 16,09 |
+| Azure: private endpoint + zona DNS | 7,80 | 7,80 | 7,80 | 7,80 |
+| Azure: Container Registry Basic | 5,07 | 5,07 | 5,07 | 5,07 |
+| Azure: IP pública de la API | 3,65 | 3,65 | 3,65 | 3,65 |
+| Azure: Key Vault (operaciones) | 0,01 | 0,01 | 0,01 | 0,01 |
+| Azure: salida a internet y Log Analytics | 0 | 0 | 0 | 0 (dentro de lo gratis) |
+| **Subtotal Azure** | **134,92** | **348,75** | **1.299,12** | **111,1 + 23,76 N** |
+| Google: Cloud Run, Artifact Registry, etc. (sección 4) | 0,05 | 1,79 | 28,61 | ≈ 0,68 N − 5,2 |
+| Google: IP estática del NAT | 3,65 | 3,65 | 3,65 | 3,65 |
+| Google: puerta de enlace Cloud NAT | 2,04 | 2,04 | 5,11 | 1,02 × (⌈0,064 N⌉ + 1) |
+| Google: datos por el NAT | 0,01 | 0,12 | 0,58 | 0,0115 N |
+| **Subtotal Google** | **5,76** | **7,60** | **37,95** | **≈ −0,5 + 0,76 N** |
+| **Total (US$/mes)** | **140,68** | **356,35** | **1.337,07** | **≈ 110,6 + 24,5 × N** |
+| **Total (CLP/mes, a 979,88)** | **137.800** | **349.200** | **1.310.200** | |
+| Por kiosco (US$/mes) | 140,68 | 35,64 | 26,74 | tiende a 24,5 |
+| Por consulta (US$) | 0,105 | 0,027 | 0,020 | ≈ 0,018 |
+| Diferencia con el total de la sección 4 | +44,2 | +44,3 | +47,9 | ≈ +43 + 0,08 N |
+
+La fórmula vale para **8 ≤ N ≤ 44**, el tramo sin escalones (abajo). La parte fija, US$110,6, es casi toda de Azure: AI Search Basic (73,7) más la infraestructura nueva (38,5). La parte variable, US$24,5 por kiosco, es en un 97 % tokens del modelo y razonamiento de KB. Con 50 kioscos, lo nuevo de esta sección suma un 3,6 % del total. Con 1 kiosco, en cambio, es el 31 %: la BD, el private endpoint y el registro de contenedores son costos fijos que pesan cuando hay pocos kioscos.
+
+Si se quiere bajar el fijo para el piloto: la API con `min-replicas 0` (−5,9, con arranque en frío en el primer registro), la BD con acceso por integración de red virtual en vez de private endpoint (−7,3) y la imagen en un registro gratuito (−5,1) dejan el total de 1 kiosco en ≈ US$122.
+
+**Hardware del colegio (inversión única, no mensual; tabla 4 del P1):** Jetson Orin Nano Super US$399, Mac mini M4 16 GB US$799 (recomendado en el P1) o mini PC con RTX 4060 US$1.200 a 1.500, más una cámara USB de US$40 a 60. Para N kioscos se suma N × (equipo + cámara). Amortizado en 36 meses, el Mac mini con cámara son ≈ US$23,6 al mes por kiosco, del mismo orden que la nube por kiosco con 50 kioscos.
+
+### 9.4 Escalones: cuándo hay que subir de nivel
+
+| Recurso | Límite actual | Se alcanza con | Qué hacer | Costo del escalón |
+|---|---|---|---|---|
+| **Cuota TPM de `gpt-5.4-mini`** (confirmada: 3,11 M TPM) | 3,11 M TPM; cada kiosco usa 18.100 TPM en el pico | **≈ 171 kioscos** (80 % de la cuota con ≈ 137) | Pedir aumento de cuota y sumar un deployment en otra región (la cuota es por región, suscripción y modelo); los 429 ya caen al respaldo Gemini. Ojo: la suscripción del curso es compartida, así que la cuota regional la reparten todos los grupos | Sin costo fijo: se paga por token igual |
+| **Réplicas de Cloud Run** | `max-instances 1`; una instancia (concurrencia 10, herramientas en hilo) atiende ≈ 20 kioscos en el pico | **> 20 kioscos** | `max-instances` = ⌈0,064 N⌉ + 1; antes de pasar de 1 instancia, mover las sesiones del chat a una BD (sección 5, punto 3); `min-instances 1` desde ≈ 10 kioscos | Por uso; +1,02 al mes de NAT por instancia; `min-instances 1` +18,1 |
+| Azure AI Search Basic | 1 réplica; ≈ 1,4 búsquedas por segundo con 50 kioscos | **≈ 50 kioscos** (hay que medirlo con carga) | Segunda réplica Basic, o pasar a S1 | +73,73 o +171 (S1 = 245) |
+| **Nivel de la BD** (PostgreSQL B1ms) | 1 vCore con créditos de ráfaga, 2 GiB, ≈ 50 conexiones, sin alta disponibilidad. Escrituras en el pico: 0,015 por segundo por kiosco (0,75 por segundo con 50), muy por debajo de lo que soporta | **≈ 200 kioscos** (conexiones de varias réplicas de la API y créditos de CPU), **o antes si se exige SLA** (Burstable no tiene alta disponibilidad) | B2s (2 vCore, 4 GiB) o General Purpose D2ds_v5 con alta disponibilidad zonal | B2s: +37,2 (49,64 en total); D2ds_v5: 129,94, ×2 con alta disponibilidad |
+| API de registro (Container Apps) | 0,25 vCPU por réplica | No se alcanza en ningún escenario de este documento | Regla de escalado HTTP; una 2ª réplica mínima para alta disponibilidad | +5,91 por réplica mínima |
+| Salida de Azure | 100 GB gratis al mes (≈ 0,13 GB por kiosco) | ≈ 750 kioscos | — | US$0,08 / GB |
+| Cloud NAT | 1 IP = 64.512 puertos (64 por instancia por defecto, ≈ 1.000 instancias) | No se alcanza | La puerta de enlace topa en 32 instancias | Tope 32,12 al mes |
+| Key Vault | 4.000 lecturas cada 10 s por bóveda | No se alcanza (solo se lee al arrancar) | — | — |
+
+Con 100 kioscos (fórmula + escalones: nivel 2 de cuota, segunda réplica de AI Search y 8 instancias de Cloud Run con `min-instances 1`) el total queda en ≈ US$2.650 al mes, US$26,5 por kiosco.
+
+### 9.5 Requisitos de hardware
+
+**Nube (Google Cloud Run, servicio `kiosco-agentes`):** 1 vCPU, 1 GiB de RAM, concurrencia 10, timeout 300 s, *startup CPU boost*, sin GPU (el modelo corre en Azure AI Foundry), región `southamerica-west1` (nivel 2 de precios). Hoy `min-instances 0` y `max-instances 1`. Medido: pico de 346 MiB con 10 consultas simultáneas y 13,8 s de latencia media con esas 10 (sección 1). Capacidad: ≈ 0,5 consultas por segundo por instancia al 70 %, o sea ≈ 20 kioscos en el recreo sincronizado.
+
+**Nube (Azure):** API de registro en Container Apps con 0,25 vCPU y 0,5 GiB por réplica; PostgreSQL Flexible B1ms (1 vCore, 2 GiB, 32 GiB SSD); `gpt-5.4-mini` Global Standard (East US); AI Search Basic.
+
+**Edge del colegio, GPU/VRAM mínima:**
+
+> **No se requiere GPU: YOLOv8n y EasyOCR corren en CPU (8 GB de RAM como mínimo, medido en el P1). Si se mantiene el respaldo LLM local (LM Studio con Llama-3.2-3B Q4, 1,9 GB), la mínima es 4 GB de VRAM dedicada u 8 GB de memoria unificada. Recomendado: 8 GB de VRAM (RTX 4060) o 16 GB unificada (Mac mini M4).**
+
+Base: en el P1 todo corrió en un Apple M3 con 8 GB de memoria unificada, con el LLM local cargado (5 a 6 GB en uso). En el P2 el LLM pasa a la nube, así que el equipo del colegio solo necesita la visión (≈ 110 MB de modelos). Los 4 GB de VRAM con el respaldo local son una estimación: 1,9 GB del modelo más el contexto, YOLO y OCR. No se midieron en una GPU dedicada.
+
+### 9.6 Qué falta confirmar
+
+- ~~Nivel real de AI Search y cuota TPM del deployment~~ → **confirmados el 10 nov**: AI Search Basic y 3,11 M TPM. Con esto el primer escalón deja de ser la cuota (≈ 171 kioscos) y pasa a ser Cloud Run (> 20 kioscos) y AI Search (≈ 50).
+- Tamaño real de la API (vCPU, memoria y réplicas mínimas) y si la BD usa private endpoint o integración de red (Benjamín, en `../infra/`).
+- Cómo cuenta Google las instancias de Cloud Run que usan el NAT con Direct VPC egress: aquí se tomó la cota alta (`max-instances`).
+- Los totales de la sección 4 siguen sin IVA ni Cloud Build. Esta sección ya incluye la BD, la API y la red, que antes faltaban (secciones 6 y 7).
+
+## 10. ¿Es justificable el costo para un colegio? (para el informe FINAL del 16 nov)
+
+> **⚠️ Esta sección es para el informe final del Proyecto 2 (lunes 16 nov). NO va en el informe de KB + Evaluation que se entrega HOY (10 nov).**
+
+Pregunta planteada el 10 nov por Max. Responde directamente a lo que el profesor descontó en el P1 (escalabilidad y costos solo conceptuales, −0,8): no basta con dar el costo, hay que decir si se sostiene y para quién. Todas las cifras salen de la sección 9 (estimadas, precio de lista, sin IVA; confirmar en las calculadoras).
+
+**Respuesta corta para el informe:** para **un colegio aislado** es difícil de justificar; para **una red de colegios que comparte la misma plataforma** sí se sostiene.
+
+| Colegios que comparten la plataforma | US$/mes totales | US$/mes por colegio | CLP/mes por colegio (a 979,88) |
+|---|---|---|---|
+| 1 | 141 | 141 | ≈ 138.000 |
+| 10 | 356 | 36 | ≈ 35.000 |
+| 50 | 1.337 | 27 | ≈ 26.200 |
+
+**Por qué un colegio solo sale caro:** más de la mitad es costo fijo que se paga aunque nadie use el sistema. De los US$110,6 fijos, US$73,7 son Azure AI Search Basic (lo que hace funcionar las bases de conocimiento) y US$38,5 son la infraestructura que pide Magíster (red privada con NSG, Key Vault con private endpoint, PostgreSQL privado, registro de contenedores, IP fija). Lo que crece con el uso son los tokens del modelo y el razonamiento de las KB: unos US$24,5 por colegio.
+
+**Por qué compartido sí se sostiene:** la plataforma en la nube es la misma para todos y cada colegio solo agrega su equipo local (cámara y visión). Con 10 colegios el costo por colegio baja a un cuarto, y con 50 tiende a US$24,5. El modelo de negocio natural es un sostenedor, una municipalidad o una red de colegios, no un kiosco suelto.
+
+**Qué se puede bajar en un piloto de un solo colegio (≈ US$122 en vez de 141):** API de registro sin réplica mínima (−5,9, con arranque en frío), base de datos con integración de red virtual en vez de private endpoint (−7,3) y la imagen en un registro gratuito (−5,1). Un nivel más barato de AI Search podría bajar más, **pero no está probado**: habría que medir si el catálogo (44 archivos) y la normativa caben y si la calidad de las respuestas se mantiene. Declararlo como trabajo futuro, no como hecho.
+
+**Costo del equipo del colegio (inversión única, no mensual):** Mac mini M4 16 GB ≈ US$799 más una cámara USB de US$40 a 60; repartido en 36 meses son ≈ US$24 al mes por colegio.
+
+**Qué NO podemos afirmar (decirlo con honestidad):** no tenemos datos del costo de una multa ni del costo de chequear los productos a mano, así que no se puede calcular un ahorro en pesos. El beneficio que sí se puede sostener es cualitativo: queda un **registro auditable** de que cada producto se chequeó, se **evita vender productos con sello "ALTO EN"** prohibidos por la Ley 20.606 en colegios, y el veredicto lo decide una regla fija, no el modelo. Si Fer o Benjamín consiguen un dato real (multa, tiempo de revisión manual), se agrega aquí.
+
+**Comparación con el Proyecto 1 (IA local):** el P1 tenía costo mensual casi nulo (todo corría en el equipo del colegio) pero exigía GPU o memoria unificada de 8 GB y no escalaba a muchos colegios sin administrar cada equipo. El P2 cambia ese costo de hardware por un costo mensual compartido y gana multi-agente, registro central y gestión única.

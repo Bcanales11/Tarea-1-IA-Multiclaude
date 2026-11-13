@@ -1,0 +1,11 @@
+# Lo que nunca entra a la imagen (az acr build sube solo lo que no está aquí)
+.venv/
+.env
+.env.*
+datos_local/
+*.db
+pruebas/
+.pytest_cache/
+__pycache__/
+*.pyc
+README.md

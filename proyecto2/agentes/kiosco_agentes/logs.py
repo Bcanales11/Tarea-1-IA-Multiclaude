@@ -11,6 +11,8 @@ Eventos:
 - modelo_respaldo                      respondió el modelo de respaldo (Gemini) y no el principal
 - modelo_error                         fallaron principal y respaldo; se responde un mensaje controlado
 - herramienta_ok / herramienta_error   cada llamada a buscar_*, guardar_chequeo, etc.
+- secretos_key_vault                   al arrancar, si hay KEY_VAULT_URL: método de autenticación y
+                                       secretos cargados / ya definidos / fallidos (sin valores)
 """
 
 from __future__ import annotations
@@ -55,6 +57,12 @@ def configurar() -> None:
     raiz.propagate = False
     litellm.suppress_debug_info = True  # sin los avisos de ayuda de LiteLLM en la consola
     litellm.callbacks = [_LoggerLiteLLM()]
+    # Key Vault se lee al importar config, antes de que existan estos logs: se publica aquí qué
+    # método se usó y qué secretos se cargaron (solo nombres, nunca valores).
+    from . import secretos
+    if secretos.RESUMEN:
+        fallo = bool(secretos.RESUMEN.get("error") or secretos.RESUMEN.get("fallidos"))
+        evento("secretos_key_vault", logging.WARNING if fallo else logging.INFO, **secretos.RESUMEN)
 
 
 def evento(nombre: str, nivel: int = logging.INFO, **datos: Any) -> None:

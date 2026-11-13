@@ -49,6 +49,13 @@ KB_CATALOGO = _env("KB_CATALOGO", "kb-catalogo")
 FOUNDRY_SEARCH_ENDPOINT = _env("FOUNDRY_SEARCH_ENDPOINT")
 FOUNDRY_SEARCH_API_KEY = _env("FOUNDRY_SEARCH_API_KEY")
 FOUNDRY_KB_API_VERSION = _env("FOUNDRY_KB_API_VERSION")
+# Sin la clave de Azure o la de Search el servicio sigue con lo que sí tiene, en vez de caer:
+# el respaldo (Gemini) y la búsqueda local sobre los mismos archivos de las KB.
+if MODELO_PRINCIPAL.startswith("azure/") and not os.getenv("AZURE_API_KEY") and os.getenv("GEMINI_API_KEY"):
+    MODELO_PRINCIPAL = MODELO_RESPALDO
+    MODELO_ESPECIALISTAS = _env("MODELO_ESPECIALISTAS") or MODELO_PRINCIPAL
+if KB_BACKEND == "foundry" and not FOUNDRY_SEARCH_API_KEY:
+    KB_BACKEND = "local"
 CARPETA_KNOWLEDGE = CARPETA_PROYECTO2 / "knowledge"
 
 # --- Registro de chequeos ---------------------------------------------------------

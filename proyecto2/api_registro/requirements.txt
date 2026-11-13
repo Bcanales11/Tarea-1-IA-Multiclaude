@@ -1,0 +1,13 @@
+# API de registro (producción). Versiones fijadas el 10 nov 2026.
+fastapi==0.162.4
+uvicorn==0.54.0
+pydantic==2.14.3
+# PostgreSQL (Azure Database for PostgreSQL – Flexible Server); en local/pruebas no se usa
+psycopg[binary,pool]==3.3.8
+psycopg-pool==3.3.3
+python-dotenv==1.2.4
+# Base de zonas horarias para zoneinfo (la imagen slim y Windows no la traen)
+tzdata==2026.6
+# Lectura de secretos de Key Vault con identidad administrada (solo si KEY_VAULT_URL está definida)
+azure-identity==1.27.0
+azure-keyvault-secrets==4.12.0

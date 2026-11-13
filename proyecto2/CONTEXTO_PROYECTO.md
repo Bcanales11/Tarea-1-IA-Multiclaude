@@ -96,7 +96,7 @@ Un sistema para que el kiosco de un colegio cumpla la **Ley 20.606 (Ley de Etiqu
 
 **Otra carpeta, que no está en el repo:** `D:\Bionic\Proyecto 1 IA Multicloud\`
 - `scraper/scrape_jumbo.py` descarga fotos de productos de Jumbo.cl, respetando robots.txt.
-- `dataset/metadata_jumbo.csv` es un **catálogo de 1.562 productos envasados** con SKU, nombre, categoría, URL, `seal_heuristic` (True/False) y `seal_candidates`. Hay 693 con sello probable y 869 sin sello.
+- `dataset/metadata_jumbo.csv` es un **catálogo de 1.562 filas (1.561 productos únicos; el SKU 380434 está repetido)** con SKU, nombre, categoría, URL, `seal_heuristic` (True/False) y `seal_candidates`. Hay 693 con sello probable y 869 sin sello.
 - ⚠️ `seal_heuristic` sale de una **heurística automática, no revisada a mano**. Hay que declararlo como limitación.
 
 **Preguntas que ya existen** (base para el golden set):

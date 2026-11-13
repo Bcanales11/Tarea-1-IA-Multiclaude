@@ -2,5 +2,7 @@ google-adk==2.14.0
 litellm==1.108.4
 python-dotenv
 httpx
-azure-identity
-azure-keyvault-secrets
+# Key Vault (secretos.py): federacion Google -> Azure con ClientAssertionCredential
+azure-identity==1.27.0
+azure-keyvault-secrets==4.12.0
+tzdata==2026.6  # zona horaria de Chile en Windows (zoneinfo)

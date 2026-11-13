@@ -8,7 +8,7 @@ cd proyecto2/agentes
 pip install -r requirements-dev.txt          # agrega pytest
 set PYTHONIOENCODING=utf-8 & set PYTHONPATH=.
 
-python -m pytest pruebas -q                  # 28 tests, ~10 s
+python -m pytest pruebas -q                  # 41 tests, ~12 s
 python pruebas/prueba_fallas.py              # los 4 escenarios (~2 min); o: ... prueba_fallas.py 1 3
 ```
 
@@ -20,6 +20,8 @@ python pruebas/prueba_fallas.py              # los 4 escenarios (~2 min); o: ...
 | `test_kb.py` | Búsqueda BM25 local: "límite de sodio sólidos etapa 3" trae 400 mg; `solo_sin_sello=True` solo trae "no detectado" |
 | `test_servidor.py` | `/salud` 200; `/consulta` sin clave, con clave mala o con servidor sin clave configurada → 401 (no llama al modelo) |
 | `test_app_cliente.py` | `mensaje_chequeo_camara` incluye sellos ilegibles; `consultar` lanza `AgentesNoDisponibles` si el servidor no existe o responde vacío |
+| `test_app_cliente_identidad.py` | ID token de Google para Cloud Run privado: sin `AGENTES_AUDIENCIA_IAM` no se manda `Authorization`; con ella se manda `Bearer` y se reutiliza hasta 5 min antes de vencer; si no se puede pedir el token → `AgentesNoDisponibles` sin llamar al servicio; un 401/403 descarta el token |
+| `test_secretos.py` | Key Vault (`secretos.py`): sin `KEY_VAULT_URL` no hace nada; con tenant y client sin secreto usa `ClientAssertionCredential` cuyo callback pide el ID token al servidor de metadatos de Google (audiencia `api://AzureADTokenExchange`, cabecera `Metadata-Flavor`); si no, `DefaultAzureCredential`; no sobrescribe variables existentes; un secreto que falla no rompe el arranque; una falla de autenticación corta sin insistir; los logs y el resumen no tienen valores |
 
 ## Script de fallas (`prueba_fallas.py`)
 

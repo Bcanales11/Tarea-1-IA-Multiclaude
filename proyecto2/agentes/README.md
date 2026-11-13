@@ -89,6 +89,15 @@ gcloud run deploy kiosco-agentes --image southamerica-west1-docker.pkg.dev/kiosc
 - Registro en modo `local` (SQLite dentro del contenedor, se pierde al reiniciar) hasta que Benjamín entregue la API de registro; entonces se cambia `REGISTRO_BACKEND=api`.
 - La IP de salida fija para los firewalls de Azure (conector VPC + Cloud NAT) se coordina con Benjamín.
 
+## Key Vault y red (16 nov)
+
+Preparado el 10 nov; **los scripts no se han corrido** (orden, dependencias con Benjamín y qué se espera ver en [`infra_gcp/README.md`](infra_gcp/README.md)).
+
+- **IP de salida fija:** Direct VPC egress (sin conector Serverless VPC Access, que cuesta más) + Cloud NAT con una IP estática. Todo el tráfico de Cloud Run hacia Azure sale por esa IP, la única que aceptan Key Vault y la API de registro. Script: `infra_gcp/ip_salida_fija.sh`.
+- **Key Vault sin claves fijas:** `secretos.py` usa federación de identidad cuando hay `KEY_VAULT_URL`, `AZURE_TENANT_ID` y `AZURE_CLIENT_ID` sin `AZURE_CLIENT_SECRET`: Cloud Run pide al servidor de metadatos un ID token de `kiosco-agentes-sa` (audiencia `api://AzureADTokenExchange`) y Entra ID lo cambia por un token de Azure (`ClientAssertionCredential`). La cuenta de servicio tiene el uniqueId `102559164316011874170`, que es el subject de la federated credential. Sin `KEY_VAULT_URL` no cambia nada. Al arrancar se registra el evento `secretos_key_vault` con el método y los secretos cargados, sin valores. Si un secreto falla, se avisa y el arranque sigue. Tests: `pruebas/test_secretos.py`. Script: `infra_gcp/conectar_key_vault.sh`, en dos fases, para no quedar nunca sin claves.
+- **Acceso de la app del kiosco:** el servicio sigue privado. La app puede mandar un ID token de una cuenta de servicio invocadora; las opciones y la recomendación están en `../app_kiosco/README.md` ("Acceso a Cloud Run"). Script: `infra_gcp/abrir_acceso_app.sh`.
+- **Costos con todo lo de Azure y la red:** `COSTOS_Y_ESCALABILIDAD.md`, sección 9.
+
 ## Limitaciones conocidas
 
 - La búsqueda local es léxica (BM25): recupera el dato clave en 33 de 40 preguntas de normativa. La de Foundry debería ser mejor (semántica).

@@ -24,7 +24,7 @@
 | Qué | Dónde |
 |---|---|
 | Archivos para subir a `kb-normativa` (3 `.txt`) | `proyecto2/knowledge/kb-normativa/` |
-| Archivos para subir a `kb-catalogo` (14 `.md`, 1.561 productos) | `proyecto2/knowledge/kb-catalogo/` |
+| Archivos para subir a `kb-catalogo` (44 `.md` de máximo 40 productos, 1.561 productos únicos, porque el CSV trae 1.562 filas con un SKU repetido; Benjamín los dividió porque con 14 archivos 8 superaban el límite de 8.000 tokens del embedding) | `proyecto2/knowledge/kb-catalogo/` |
 | Cómo subirlas, más las limitaciones del catálogo | `proyecto2/knowledge/README.md` |
 | **70 preguntas** con respuesta esperada | `proyecto2/evaluacion/preguntas_v1.jsonl` (y `.csv` para Excel) |
 | Cómo se armaron las preguntas | `proyecto2/evaluacion/README.md` |

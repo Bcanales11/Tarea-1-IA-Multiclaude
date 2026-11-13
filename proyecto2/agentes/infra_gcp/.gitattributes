@@ -1,0 +1,2 @@
+# Los scripts se corren con bash: siempre con fin de linea LF (con CRLF, bash falla)
+*.sh text eol=lf
